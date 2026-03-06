@@ -16,7 +16,13 @@
       "Bash(npx ts-node patterns/chain-of-responsibility/index.ts)",
       "Bash(npx ts-node patterns/iterator/index.ts)",
       "Bash(npx ts-node patterns/state/index.ts)",
-      "Bash(npx ts-node patterns/visitor/index.ts)"
+      "Bash(npx ts-node patterns/visitor/index.ts)",
+      "Bash(for pattern in abstract-factory adapter bridge builder builder-director chain-of-responsibility command composite decorator facade flyweight iterator mediator memento observer prototype prototype-registry proxy simple-factory singleton state strategy template-method visitor)",
+      "Bash(do echo \"=== $pattern ===\")",
+      "Bash(npx ts-node \"patterns/$pattern/solution/index.ts\")",
+      "Bash(done)",
+      "Bash(npx ts-node patterns/state/solution/index.ts)",
+      "Bash(npx ts-node patterns/visitor/solution/index.ts)"
     ]
   }
 }

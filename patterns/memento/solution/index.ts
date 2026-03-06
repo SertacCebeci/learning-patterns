@@ -2,162 +2,176 @@
 // Captures an object's internal state as an opaque snapshot so it can
 // be restored later, without exposing the object's internals.
 
-// Example: a game character with save/load checkpoints.
+// Example: a drawing canvas with version history. Snapshots store
+// the full canvas state. Only the Canvas can read snapshot data.
+
+// --- Shape type ---
+
+interface Shape {
+  type: "circle" | "rectangle" | "line";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+}
 
 // --- Memento (the snapshot) ---
-// Immutable. Only the originator can read its contents.
+// Immutable. Only the originator (Canvas) can read its contents.
 
-class CharacterSnapshot {
+class CanvasSnapshot {
   constructor(
-    private readonly _name: string,
-    private readonly _health: number,
-    private readonly _mana: number,
-    private readonly _position: { x: number; y: number },
-    private readonly _inventory: string[],
-    private readonly _timestamp: Date,
+    private readonly _shapes: Shape[],
+    private readonly _backgroundColor: string,
+    private readonly _zoom: number,
+    private readonly _label: string,
   ) {}
 
-  // Only the originator (GameCharacter) uses these
-  get name(): string { return this._name; }
-  get health(): number { return this._health; }
-  get mana(): number { return this._mana; }
-  get position(): { x: number; y: number } { return { ...this._position }; }
-  get inventory(): string[] { return [...this._inventory]; }
+  // Only the Canvas uses these to restore state
+  get shapes(): Shape[] {
+    return this._shapes.map((s) => ({ ...s }));
+  }
+  get backgroundColor(): string { return this._backgroundColor; }
+  get zoom(): number { return this._zoom; }
 
-  // The caretaker can see metadata but not game state
+  // The caretaker can see metadata but NOT the actual canvas data
   getLabel(): string {
-    return `[${this._timestamp.toLocaleTimeString()}] ${this._name} — HP:${this._health} Pos:(${this._position.x},${this._position.y})`;
+    return this._label;
   }
 }
 
-// --- Originator (the object whose state we save) ---
+// --- Originator: Canvas ---
 
-class GameCharacter {
-  private name: string;
-  private health: number;
-  private mana: number;
-  private position: { x: number; y: number };
-  private inventory: string[];
+class Canvas {
+  private shapes: Shape[] = [];
+  private backgroundColor = "white";
+  private zoom = 1;
 
-  constructor(name: string) {
-    this.name = name;
-    this.health = 100;
-    this.mana = 50;
-    this.position = { x: 0, y: 0 };
-    this.inventory = ["Wooden Sword"];
+  addShape(shape: Shape): void {
+    this.shapes.push({ ...shape });
+    console.log(`  Added ${shape.type} (${shape.color}) at (${shape.x}, ${shape.y})`);
   }
 
-  // --- Game actions that modify state ---
-
-  move(x: number, y: number): void {
-    this.position = { x, y };
-    console.log(`  ${this.name} moved to (${x}, ${y})`);
+  removeLastShape(): void {
+    const removed = this.shapes.pop();
+    if (removed) {
+      console.log(`  Removed ${removed.type} (${removed.color})`);
+    } else {
+      console.log("  No shapes to remove.");
+    }
   }
 
-  takeDamage(amount: number): void {
-    this.health = Math.max(0, this.health - amount);
-    console.log(`  ${this.name} took ${amount} damage — HP: ${this.health}`);
+  setBackground(color: string): void {
+    this.backgroundColor = color;
+    console.log(`  Background set to ${color}`);
   }
 
-  castSpell(manaCost: number): void {
-    this.mana = Math.max(0, this.mana - manaCost);
-    console.log(`  ${this.name} cast spell — Mana: ${this.mana}`);
-  }
-
-  pickUp(item: string): void {
-    this.inventory.push(item);
-    console.log(`  ${this.name} picked up: ${item}`);
+  setZoom(level: number): void {
+    this.zoom = level;
+    console.log(`  Zoom set to ${level}x`);
   }
 
   display(): void {
-    console.log(`  ${this.name} | HP:${this.health} MP:${this.mana} | Pos:(${this.position.x},${this.position.y}) | Items: [${this.inventory.join(", ")}]`);
+    console.log(`  Canvas: ${this.shapes.length} shapes, bg: ${this.backgroundColor}, zoom: ${this.zoom}x`);
+    for (const s of this.shapes) {
+      console.log(`    - ${s.type} (${s.color}) at (${s.x}, ${s.y}) [${s.width}x${s.height}]`);
+    }
   }
 
-  // --- Memento methods (only the originator creates/restores snapshots) ---
+  // --- Memento methods ---
 
-  save(): CharacterSnapshot {
-    return new CharacterSnapshot(
-      this.name,
-      this.health,
-      this.mana,
-      { ...this.position },
-      [...this.inventory],
-      new Date(),
+  save(): CanvasSnapshot {
+    const label = `${this.shapes.length} shapes, bg: ${this.backgroundColor}, zoom: ${this.zoom}x`;
+    return new CanvasSnapshot(
+      this.shapes.map((s) => ({ ...s })), // deep copy each shape
+      this.backgroundColor,
+      this.zoom,
+      label,
     );
   }
 
-  restore(snapshot: CharacterSnapshot): void {
-    this.name = snapshot.name;
-    this.health = snapshot.health;
-    this.mana = snapshot.mana;
-    this.position = snapshot.position;
-    this.inventory = snapshot.inventory;
-    console.log(`  ${this.name} restored from checkpoint.`);
+  restore(snapshot: CanvasSnapshot): void {
+    this.shapes = snapshot.shapes; // getter already returns deep copies
+    this.backgroundColor = snapshot.backgroundColor;
+    this.zoom = snapshot.zoom;
+    console.log(`  Canvas restored from snapshot.`);
   }
 }
 
-// --- Caretaker (manages checkpoints) ---
-// Holds mementos but never inspects their game state.
+// --- Caretaker: VersionHistory ---
+// Holds snapshots but never inspects canvas data directly.
 
-class CheckpointManager {
-  private checkpoints: CharacterSnapshot[] = [];
+class VersionHistory {
+  private snapshots: CanvasSnapshot[] = [];
 
-  save(character: GameCharacter): void {
-    const snapshot = character.save();
-    this.checkpoints.push(snapshot);
-    console.log(`  [Checkpoint saved] ${snapshot.getLabel()}`);
+  save(canvas: Canvas): void {
+    const snapshot = canvas.save();
+    this.snapshots.push(snapshot);
+    console.log(`=== Snapshot ${this.snapshots.length} saved: "${snapshot.getLabel()}" ===`);
   }
 
-  loadLast(character: GameCharacter): boolean {
-    const snapshot = this.checkpoints.pop();
-    if (!snapshot) {
-      console.log("  No checkpoints available.");
+  restore(canvas: Canvas, index: number): boolean {
+    if (index < 0 || index >= this.snapshots.length) {
+      console.log(`  Invalid snapshot index: ${index}`);
       return false;
     }
-    console.log(`  [Loading checkpoint] ${snapshot.getLabel()}`);
-    character.restore(snapshot);
+    const snapshot = this.snapshots[index];
+    console.log(`=== Restored to Snapshot ${index + 1}: ${snapshot.getLabel()} ===`);
+    canvas.restore(snapshot);
     return true;
   }
 
-  listCheckpoints(): void {
-    console.log(`  Checkpoints (${this.checkpoints.length}):`);
-    for (const cp of this.checkpoints) {
-      console.log(`    ${cp.getLabel()}`);
+  listSnapshots(): void {
+    console.log(`  Snapshots (${this.snapshots.length}):`);
+    for (let i = 0; i < this.snapshots.length; i++) {
+      console.log(`    ${i + 1}. ${this.snapshots[i].getLabel()}`);
     }
+  }
+
+  clear(): void {
+    this.snapshots = [];
+    console.log("  Version history cleared.");
   }
 }
 
 // --- Usage ---
 
-const hero = new GameCharacter("Aldric");
-const manager = new CheckpointManager();
+const canvas = new Canvas();
+const history = new VersionHistory();
 
-console.log("=== Starting state ===");
-hero.display();
+console.log("=== Adding 3 shapes ===");
+canvas.addShape({ type: "circle", x: 10, y: 20, width: 50, height: 50, color: "red" });
+canvas.addShape({ type: "rectangle", x: 30, y: 40, width: 100, height: 60, color: "blue" });
+canvas.addShape({ type: "line", x: 0, y: 0, width: 200, height: 1, color: "black" });
 
-console.log("\n=== Checkpoint 1: before dungeon ===");
-manager.save(hero);
+console.log();
+history.save(canvas);
 
-console.log("\n=== Exploring dungeon ===");
-hero.move(10, 25);
-hero.pickUp("Iron Shield");
-hero.takeDamage(30);
-hero.castSpell(20);
-hero.display();
+console.log("\n=== Modifying canvas ===");
+canvas.setBackground("navy");
+canvas.setZoom(1.5);
+canvas.addShape({ type: "circle", x: 80, y: 90, width: 30, height: 30, color: "yellow" });
+canvas.addShape({ type: "rectangle", x: 120, y: 50, width: 40, height: 80, color: "green" });
 
-console.log("\n=== Checkpoint 2: mid-dungeon ===");
-manager.save(hero);
+console.log();
+history.save(canvas);
 
-console.log("\n=== Boss fight goes badly ===");
-hero.move(15, 40);
-hero.takeDamage(60);
-hero.castSpell(25);
-hero.display();
+console.log("\n=== Messing things up ===");
+canvas.removeLastShape();
+canvas.removeLastShape();
+canvas.removeLastShape();
+canvas.setBackground("red");
+canvas.setZoom(3);
+console.log();
+canvas.display();
 
-console.log("\n=== Load last checkpoint (mid-dungeon) ===");
-manager.loadLast(hero);
-hero.display();
+console.log("\n=== Listing all snapshots ===");
+history.listSnapshots();
 
-console.log("\n=== Still bad, load earlier checkpoint (before dungeon) ===");
-manager.loadLast(hero);
-hero.display();
+console.log("\n=== Restoring to Snapshot 1 ===");
+history.restore(canvas, 0);
+canvas.display();
+
+console.log("\n=== Restoring to Snapshot 2 ===");
+history.restore(canvas, 1);
+canvas.display();

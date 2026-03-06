@@ -1,114 +1,118 @@
 // Flyweight Pattern
 // Minimizes memory by sharing common state (intrinsic) across many objects
-// instead of duplicating it. Unique state (extrinsic) is passed in by the client.
+// instead of duplicating it. Unique state (extrinsic) is kept per instance.
 
 // --- Flyweight (shared state) ---
-// One instance per tree type. Holds the heavy, repeated data.
+// One instance per unique style combination. Holds the heavy, repeated data.
 
-class TreeType {
+class CharacterStyle {
   constructor(
-    public readonly name: string,
+    public readonly fontFamily: string,
+    public readonly fontSize: number,
     public readonly color: string,
-    public readonly texture: string, // imagine this is a large bitmap
   ) {}
 
-  draw(x: number, y: number): void {
-    console.log(`  [${this.name}] color=${this.color} texture=${this.texture} at (${x}, ${y})`);
+  render(row: number, col: number, char: string): string {
+    return `[${this.fontFamily} ${this.fontSize}px ${this.color}] '${char}' at (${row}, ${col})`;
   }
 }
 
 // --- Flyweight Factory ---
-// Ensures only one TreeType exists per unique combination.
+// Ensures only one CharacterStyle exists per unique combination.
 
-class TreeTypeFactory {
-  private types = new Map<string, TreeType>();
+class CharacterStyleFactory {
+  private styles = new Map<string, CharacterStyle>();
 
-  getType(name: string, color: string, texture: string): TreeType {
-    const key = `${name}_${color}_${texture}`;
+  getStyle(fontFamily: string, fontSize: number, color: string): CharacterStyle {
+    const key = `${fontFamily}_${fontSize}_${color}`;
 
-    if (!this.types.has(key)) {
-      this.types.set(key, new TreeType(name, color, texture));
-      console.log(`  [Factory] Created new TreeType: ${name}`);
+    if (!this.styles.has(key)) {
+      this.styles.set(key, new CharacterStyle(fontFamily, fontSize, color));
+      console.log(`  [Factory] Created new style: ${fontFamily} ${fontSize}px ${color}`);
     }
 
-    return this.types.get(key)!;
+    return this.styles.get(key)!;
   }
 
   get count(): number {
-    return this.types.size;
+    return this.styles.size;
   }
 }
 
 // --- Context (unique state) ---
-// Each tree has its own position, but shares the TreeType flyweight.
+// Each Character has its own position and character value,
+// but shares the CharacterStyle flyweight.
 
-class Tree {
+class Character {
   constructor(
-    private x: number,
-    private y: number,
-    private type: TreeType,
+    private row: number,
+    private col: number,
+    private char: string,
+    private style: CharacterStyle,
   ) {}
 
-  draw(): void {
-    this.type.draw(this.x, this.y);
+  render(): string {
+    return this.style.render(this.row, this.col, this.char);
   }
 }
 
-// --- The forest ---
+// --- Document ---
+// Manages all characters and uses the factory to share styles.
 
-class Forest {
-  private trees: Tree[] = [];
-  private factory = new TreeTypeFactory();
+class Document {
+  private characters: Character[] = [];
+  private factory = new CharacterStyleFactory();
 
-  plantTree(x: number, y: number, name: string, color: string, texture: string): void {
-    const type = this.factory.getType(name, color, texture);
-    this.trees.push(new Tree(x, y, type));
+  addCharacter(row: number, col: number, char: string, fontFamily: string, fontSize: number, color: string): void {
+    const style = this.factory.getStyle(fontFamily, fontSize, color);
+    this.characters.push(new Character(row, col, char, style));
   }
 
-  draw(): void {
-    for (const tree of this.trees) {
-      tree.draw();
+  render(): void {
+    for (const character of this.characters) {
+      console.log(`  ${character.render()}`);
     }
   }
 
-  get stats(): { treeCount: number; typeCount: number } {
+  get stats(): { charCount: number; styleCount: number } {
     return {
-      treeCount: this.trees.length,
-      typeCount: this.factory.count,
+      charCount: this.characters.length,
+      styleCount: this.factory.count,
     };
   }
 }
 
 // --- Usage ---
-// 12 trees planted, but only 3 TreeType objects created in memory.
+// 20+ characters using only 3 unique styles.
 
-const forest = new Forest();
+const doc = new Document();
 
-console.log("=== Planting trees ===");
-// Plant oaks
-forest.plantTree(10, 20, "Oak", "green", "oak_bark.png");
-forest.plantTree(50, 80, "Oak", "green", "oak_bark.png");
-forest.plantTree(90, 30, "Oak", "green", "oak_bark.png");
-forest.plantTree(120, 60, "Oak", "green", "oak_bark.png");
+console.log("=== Building document ===");
 
-// Plant pines
-forest.plantTree(15, 45, "Pine", "dark-green", "pine_bark.png");
-forest.plantTree(70, 10, "Pine", "dark-green", "pine_bark.png");
-forest.plantTree(110, 90, "Pine", "dark-green", "pine_bark.png");
-forest.plantTree(30, 70, "Pine", "dark-green", "pine_bark.png");
+// Body text: Arial 12px black
+const bodyText = "Hello, World!";
+for (let i = 0; i < bodyText.length; i++) {
+  doc.addCharacter(0, i, bodyText[i], "Arial", 12, "black");
+}
 
-// Plant birches
-forest.plantTree(25, 55, "Birch", "light-green", "birch_bark.png");
-forest.plantTree(60, 40, "Birch", "light-green", "birch_bark.png");
-forest.plantTree(95, 75, "Birch", "light-green", "birch_bark.png");
-forest.plantTree(140, 20, "Birch", "light-green", "birch_bark.png");
+// Heading: Arial 16px black
+const heading = "Title";
+for (let i = 0; i < heading.length; i++) {
+  doc.addCharacter(1, i, heading[i], "Arial", 16, "black");
+}
 
-console.log("\n=== Drawing forest ===");
-forest.draw();
+// Link text: Arial 12px blue
+const linkText = "Click here";
+for (let i = 0; i < linkText.length; i++) {
+  doc.addCharacter(2, i, linkText[i], "Arial", 12, "blue");
+}
 
-const { treeCount, typeCount } = forest.stats;
+console.log("\n=== Rendering document ===");
+doc.render();
+
+const { charCount, styleCount } = doc.stats;
 console.log(`\n=== Memory savings ===`);
-console.log(`  Trees rendered: ${treeCount}`);
-console.log(`  TreeType objects in memory: ${typeCount}`);
-console.log(`  Without flyweight: ${treeCount} full objects`);
-console.log(`  With flyweight: ${typeCount} shared + ${treeCount} lightweight wrappers`);
+console.log(`  Characters rendered: ${charCount}`);
+console.log(`  CharacterStyle objects in memory: ${styleCount}`);
+console.log(`  Without flyweight: ${charCount} full style objects`);
+console.log(`  With flyweight: ${styleCount} shared styles + ${charCount} lightweight wrappers`);

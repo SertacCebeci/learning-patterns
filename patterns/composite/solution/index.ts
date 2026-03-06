@@ -4,75 +4,80 @@
 
 // --- Component interface ---
 
-interface FileSystemNode {
-  name: string;
-  getSize(): number;
-  print(indent?: string): void;
+interface OrgEntity {
+  getTotalSalary(): number;
+  display(indent?: string): void;
+  getHeadcount(): number;
 }
 
 // --- Leaf ---
 
-class File implements FileSystemNode {
+class Employee implements OrgEntity {
   constructor(
-    public name: string,
-    private size: number,
+    private name: string,
+    private title: string,
+    private salary: number,
   ) {}
 
-  getSize(): number {
-    return this.size;
+  getTotalSalary(): number {
+    return this.salary;
   }
 
-  print(indent = ""): void {
-    console.log(`${indent}📄 ${this.name} (${this.size} KB)`);
+  display(indent = ""): void {
+    console.log(`${indent}${this.name} -- ${this.title} -- $${this.salary.toLocaleString()}`);
+  }
+
+  getHeadcount(): number {
+    return 1;
   }
 }
 
 // --- Composite ---
 
-class Folder implements FileSystemNode {
-  private children: FileSystemNode[] = [];
+class Department implements OrgEntity {
+  private members: OrgEntity[] = [];
 
-  constructor(public name: string) {}
+  constructor(private name: string) {}
 
-  add(node: FileSystemNode): void {
-    this.children.push(node);
+  add(entity: OrgEntity): void {
+    this.members.push(entity);
   }
 
-  getSize(): number {
-    return this.children.reduce((sum, child) => sum + child.getSize(), 0);
+  getTotalSalary(): number {
+    return this.members.reduce((sum, member) => sum + member.getTotalSalary(), 0);
   }
 
-  print(indent = ""): void {
-    console.log(`${indent}📁 ${this.name} (${this.getSize()} KB)`);
-    for (const child of this.children) {
-      child.print(indent + "  ");
+  display(indent = ""): void {
+    console.log(`${indent}${this.name} (Department)`);
+    for (const member of this.members) {
+      member.display(indent + "  ");
     }
+  }
+
+  getHeadcount(): number {
+    return this.members.reduce((count, member) => count + member.getHeadcount(), 0);
   }
 }
 
 // --- Usage ---
-// Client code calls getSize() and print() on any node without
-// caring whether it's a file or a folder.
+// Client code calls getTotalSalary(), display(), or getHeadcount() on any
+// entity without knowing whether it is an employee or a department.
 
-const src = new Folder("src");
-src.add(new File("index.ts", 4));
-src.add(new File("app.ts", 8));
+const backend = new Department("Backend Team");
+backend.add(new Employee("Bob", "Senior Dev", 150000));
+backend.add(new Employee("Carol", "Junior Dev", 90000));
 
-const components = new Folder("components");
-components.add(new File("Header.tsx", 3));
-components.add(new File("Footer.tsx", 2));
+const frontend = new Department("Frontend Team");
+frontend.add(new Employee("Dave", "Senior Dev", 145000));
+frontend.add(new Employee("Eve", "Intern", 50000));
 
-const utils = new Folder("utils");
-utils.add(new File("format.ts", 1));
-utils.add(new File("validate.ts", 2));
+const engineering = new Department("Engineering");
+engineering.add(new Employee("Alice", "CTO", 200000));
+engineering.add(backend);
+engineering.add(frontend);
 
-src.add(components);
-src.add(utils);
+console.log("=== Organization Chart ===");
+engineering.display();
 
-const root = new Folder("project");
-root.add(src);
-root.add(new File("package.json", 1));
-root.add(new File("tsconfig.json", 1));
-
-root.print();
-console.log(`\nTotal size: ${root.getSize()} KB`);
+console.log(`\nTotal salary cost: $${engineering.getTotalSalary().toLocaleString()}`);
+console.log(`Headcount: ${engineering.getHeadcount()}`);

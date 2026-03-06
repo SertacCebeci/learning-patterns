@@ -4,59 +4,100 @@
 
 // --- The interface our app expects ---
 
-interface PaymentProcessor {
-  pay(amount: number, currency: string): void;
-  refund(transactionId: string, amount: number): void;
+interface WeatherProvider {
+  getCurrentTemperature(city: string): number;
+  getHumidity(city: string): number;
+  getForecast(city: string, days: number): string[];
 }
 
-// --- A third-party payment SDK with a completely different API ---
+// --- A third-party weather SDK with a completely different API ---
 
-class StripeLikeSDK {
-  createCharge(opts: { amountInCents: number; cur: string }): { id: string } {
-    const id = `ch_${Math.random().toString(36).slice(2, 10)}`;
-    console.log(`  [Stripe SDK] Charge created: ${id} — ${opts.amountInCents} cents (${opts.cur})`);
-    return { id };
+class OpenMeteoSDK {
+  fetchWeatherData(params: { location: string; units: "metric" | "imperial" }): {
+    temp_c: number;
+    humidity_pct: number;
+  } {
+    // Simulated weather data based on location
+    console.log(`  [OpenMeteoSDK] Fetching weather for "${params.location}" (${params.units})`);
+    return { temp_c: 22, humidity_pct: 65 };
   }
 
-  reverseCharge(chargeId: string, amountInCents: number): void {
-    console.log(`  [Stripe SDK] Reversed ${amountInCents} cents on charge ${chargeId}`);
+  fetchForecastData(params: { location: string; num_days: number; units: "metric" | "imperial" }): {
+    daily_summaries: string[];
+  } {
+    console.log(`  [OpenMeteoSDK] Fetching ${params.num_days}-day forecast for "${params.location}"`);
+    const summaries = Array.from({ length: params.num_days }, (_, i) => `Day ${i + 1}: Partly cloudy`);
+    return { daily_summaries: summaries };
   }
 }
 
 // --- The Adapter ---
-// Wraps the incompatible SDK and exposes our PaymentProcessor interface.
+// Wraps the incompatible SDK and exposes our WeatherProvider interface.
 
-class StripeAdapter implements PaymentProcessor {
-  private sdk: StripeLikeSDK;
+class OpenMeteoAdapter implements WeatherProvider {
+  private sdk: OpenMeteoSDK;
 
-  constructor(sdk: StripeLikeSDK) {
+  constructor(sdk: OpenMeteoSDK) {
     this.sdk = sdk;
   }
 
-  pay(amount: number, currency: string): void {
-    // Our app uses whole dollars, but the SDK expects cents
-    const amountInCents = Math.round(amount * 100);
-    this.sdk.createCharge({ amountInCents, cur: currency.toLowerCase() });
+  // Convert city name to the format expected by the SDK:
+  // "New York" -> "new_york"
+  private formatLocation(city: string): string {
+    return city.toLowerCase().replace(/\s+/g, "_");
   }
 
-  refund(transactionId: string, amount: number): void {
-    const amountInCents = Math.round(amount * 100);
-    this.sdk.reverseCharge(transactionId, amountInCents);
+  // Convert Celsius to Fahrenheit: F = C * 9/5 + 32
+  private celsiusToFahrenheit(celsius: number): number {
+    return celsius * 9 / 5 + 32;
+  }
+
+  getCurrentTemperature(city: string): number {
+    const data = this.sdk.fetchWeatherData({
+      location: this.formatLocation(city),
+      units: "metric",
+    });
+    return this.celsiusToFahrenheit(data.temp_c);
+  }
+
+  getHumidity(city: string): number {
+    const data = this.sdk.fetchWeatherData({
+      location: this.formatLocation(city),
+      units: "metric",
+    });
+    return data.humidity_pct;
+  }
+
+  getForecast(city: string, days: number): string[] {
+    const data = this.sdk.fetchForecastData({
+      location: this.formatLocation(city),
+      num_days: days,
+      units: "metric",
+    });
+    return data.daily_summaries;
   }
 }
 
 // --- Client code ---
-// Works only with PaymentProcessor. Doesn't know or care that Stripe is behind it.
+// Works only with WeatherProvider. Doesn't know or care that OpenMeteoSDK is behind it.
 
-function checkout(processor: PaymentProcessor): void {
-  console.log("Processing payment...");
-  processor.pay(49.99, "USD");
+function showDashboard(provider: WeatherProvider, city: string): void {
+  console.log(`\nWeather Dashboard for ${city}`);
+  console.log("─".repeat(35));
 
-  console.log("Issuing refund...");
-  processor.refund("ch_abc123", 10.00);
+  const temp = provider.getCurrentTemperature(city);
+  console.log(`  Temperature: ${temp}°F`);
+
+  const humidity = provider.getHumidity(city);
+  console.log(`  Humidity: ${humidity}%`);
+
+  const forecast = provider.getForecast(city, 3);
+  console.log(`  Forecast:`);
+  forecast.forEach((day) => console.log(`    - ${day}`));
 }
 
-const stripeSDK = new StripeLikeSDK();
-const processor = new StripeAdapter(stripeSDK);
+const sdk = new OpenMeteoSDK();
+const provider = new OpenMeteoAdapter(sdk);
 
-checkout(processor);
+showDashboard(provider, "New York");
+showDashboard(provider, "San Francisco");

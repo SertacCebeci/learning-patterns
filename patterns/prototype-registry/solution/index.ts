@@ -1,115 +1,121 @@
-// Prototype Pattern — Advanced (Prototype Registry)
-// Players start from base classes, customize them, and register the result
-// as a new prototype. Future units can be cloned from any registered prototype.
+// Prototype Pattern — Prototype Registry
+// Creates new objects by cloning registered prototypes from a central catalog.
+// The registry stores clones (not references), and spawning returns independent
+// copies, so modifications never leak back into the templates.
 
-// --- Unit ---
+// --- ServerConfig (the Prototype) ---
 
-class Unit {
+class ServerConfig {
   constructor(
     public name: string,
-    public health: number,
-    public attack: number,
-    public defense: number,
-    public abilities: string[],
+    public cpu: number,
+    public memoryGB: number,
+    public diskGB: number,
+    public packages: string[],
   ) {}
 
-  clone(): Unit {
-    return new Unit(
+  // Deep copy — especially important for the packages array
+  clone(): ServerConfig {
+    return new ServerConfig(
       this.name,
-      this.health,
-      this.attack,
-      this.defense,
-      [...this.abilities],
+      this.cpu,
+      this.memoryGB,
+      this.diskGB,
+      [...this.packages],
     );
   }
 
-  addAbility(ability: string): void {
-    this.abilities.push(ability);
+  addPackage(pkg: string): void {
+    this.packages.push(pkg);
   }
 
-  boostStats(health: number, attack: number, defense: number): void {
-    this.health += health;
-    this.attack += attack;
-    this.defense += defense;
+  // Adds to existing values (not replaces)
+  upgradeSpecs(cpu: number, memory: number, disk: number): void {
+    this.cpu += cpu;
+    this.memoryGB += memory;
+    this.diskGB += disk;
   }
 
   display(): void {
     console.log(
-      `  ${this.name} | HP:${this.health} ATK:${this.attack} DEF:${this.defense} | ${this.abilities.join(", ")}`,
+      `  ${this.name} | CPU: ${this.cpu} cores | RAM: ${this.memoryGB} GB | Disk: ${this.diskGB} GB | Packages: [${this.packages.join(", ")}]`,
     );
   }
 }
 
-// --- Prototype Registry ---
-// Stores named prototypes. Anyone can register a customized unit as a new
-// prototype, and later spawn clones from it by name.
+// --- ServerRegistry ---
+// Stores named server templates. Registration stores a clone, and spawning
+// returns a clone, so the registry is always isolated from outside mutations.
 
-class UnitRegistry {
-  private prototypes = new Map<string, Unit>();
+class ServerRegistry {
+  private templates = new Map<string, ServerConfig>();
 
-  register(key: string, unit: Unit): void {
-    // Store a clone so the original can keep being modified without
-    // affecting the registered prototype
-    this.prototypes.set(key, unit.clone());
-    console.log(`Registered new prototype: "${key}"`);
+  register(key: string, config: ServerConfig): void {
+    // Store a clone so the caller can keep modifying the original
+    // without affecting the registered template
+    this.templates.set(key, config.clone());
+    console.log(`Registered template: "${key}"`);
   }
 
-  spawn(key: string): Unit {
-    const proto = this.prototypes.get(key);
-    if (!proto) {
-      throw new Error(`Unknown unit type: "${key}"`);
+  spawn(key: string): ServerConfig {
+    const template = this.templates.get(key);
+    if (!template) {
+      throw new Error(`Unknown template: "${key}"`);
     }
-    return proto.clone();
+    return template.clone();
   }
 
-  listPrototypes(): void {
-    console.log("Available prototypes:");
-    for (const [key, unit] of this.prototypes) {
+  listTemplates(): void {
+    console.log("Available templates:");
+    for (const [key, config] of this.templates) {
       process.stdout.write(`  [${key}] `);
-      unit.display();
+      config.display();
     }
   }
 }
 
-// --- Gameplay simulation ---
+// --- Demo: Cloud infrastructure provisioning workflow ---
 
-const registry = new UnitRegistry();
+const registry = new ServerRegistry();
 
-// Game ships with base classes
-registry.register("warrior", new Unit("Warrior", 100, 25, 15, ["Slash", "Shield Block"]));
-registry.register("mage", new Unit("Mage", 60, 40, 5, ["Fireball", "Frost Nova"]));
-
-console.log("");
-registry.listPrototypes();
-
-// Player starts with a mage and customizes it
-console.log("\n=== Player customizing a Mage ===");
-const myUnit = registry.spawn("mage");
-myUnit.name = "Archmage";
-myUnit.addAbility("Teleport");
-myUnit.addAbility("Meteor");
-myUnit.boostStats(20, 15, 5);
-myUnit.display();
-
-// Player is happy — registers it as a new prototype
-console.log("\n=== Player saves custom unit as new prototype ===");
-registry.register("archmage", myUnit);
+// Register base templates with sensible defaults
+registry.register("web-server", new ServerConfig("Web Server", 2, 4, 50, ["nginx"]));
+registry.register("database-server", new ServerConfig("Database Server", 4, 16, 200, ["postgresql", "pgbouncer"]));
 
 console.log("");
-registry.listPrototypes();
+registry.listTemplates();
 
-// Now archmage can be mass-spawned
-console.log("\n=== Spawning archmages from the new prototype ===");
-const a1 = registry.spawn("archmage");
-a1.name = "Archmage #1";
+// Spawn a web server and customize it into an API gateway
+console.log("\n=== Customizing a web server into an API gateway ===");
+const apiGw = registry.spawn("web-server");
+apiGw.name = "API Gateway";
+apiGw.addPackage("node");
+apiGw.addPackage("redis");
+apiGw.upgradeSpecs(2, 4, 50);
+apiGw.display();
 
-const a2 = registry.spawn("archmage");
-a2.name = "Archmage #2";
-a2.addAbility("Time Stop"); // further customization on a single clone
+// Save the customized config as a new template
+console.log("\n=== Registering API gateway as a new template ===");
+registry.register("api-gateway", apiGw);
 
-a1.display();
-a2.display();
+console.log("");
+registry.listTemplates();
 
-// Original prototype is untouched
-console.log("\n=== Registry prototype unchanged? ===");
-registry.spawn("archmage").display();
+// Spawn multiple api-gateway instances and customize individually
+console.log("\n=== Spawning API gateway instances ===");
+const gw1 = registry.spawn("api-gateway");
+gw1.name = "API Gateway #1";
+gw1.addPackage("monitoring-agent");
+
+const gw2 = registry.spawn("api-gateway");
+gw2.name = "API Gateway #2";
+gw2.addPackage("rate-limiter");
+gw2.upgradeSpecs(2, 8, 0);
+
+gw1.display();
+gw2.display();
+
+// Prove the registry template is unchanged
+console.log("\n=== Registry template unchanged? ===");
+registry.spawn("api-gateway").display();
+// Still shows 3 packages: nginx, node, redis — not 4 or 5

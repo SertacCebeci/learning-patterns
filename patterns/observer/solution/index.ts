@@ -2,129 +2,137 @@
 // Defines a one-to-many dependency: when the subject changes state,
 // all subscribed observers are notified automatically.
 
-// Example: a stock market ticker where different displays react
-// to price changes independently.
+// Example: a weather station with multiple display units that update
+// whenever new sensor readings arrive. Displays can be added or
+// removed at any time without modifying the WeatherStation.
 
 // --- Observer interface ---
+// All display types must implement this common interface.
 
-interface PriceObserver {
-  update(symbol: string, price: number): void;
+interface WeatherDisplay {
+  update(temperature: number, humidity: number, pressure: number): void;
+  display(): void;
 }
 
-// --- Subject ---
+// --- Subject: WeatherStation ---
+// Tracks sensor data and notifies registered displays on changes.
 
-class StockTicker {
-  private observers = new Map<string, Set<PriceObserver>>();
-  private prices = new Map<string, number>();
+class WeatherStation {
+  private displays = new Set<WeatherDisplay>();
+  private temperature = 0;
+  private humidity = 0;
+  private pressure = 0;
 
-  subscribe(symbol: string, observer: PriceObserver): void {
-    if (!this.observers.has(symbol)) {
-      this.observers.set(symbol, new Set());
-    }
-    this.observers.get(symbol)!.add(observer);
+  registerDisplay(display: WeatherDisplay): void {
+    this.displays.add(display);
   }
 
-  unsubscribe(symbol: string, observer: PriceObserver): void {
-    this.observers.get(symbol)?.delete(observer);
+  removeDisplay(display: WeatherDisplay): void {
+    this.displays.delete(display);
   }
 
-  setPrice(symbol: string, price: number): void {
-    const oldPrice = this.prices.get(symbol);
-    this.prices.set(symbol, price);
-
-    if (oldPrice !== price) {
-      this.notify(symbol, price);
-    }
+  setMeasurements(temperature: number, humidity: number, pressure: number): void {
+    this.temperature = temperature;
+    this.humidity = humidity;
+    this.pressure = pressure;
+    this.notifyDisplays();
   }
 
-  private notify(symbol: string, price: number): void {
-    const subs = this.observers.get(symbol);
-    if (subs) {
-      for (const observer of subs) {
-        observer.update(symbol, price);
-      }
+  private notifyDisplays(): void {
+    for (const display of this.displays) {
+      display.update(this.temperature, this.humidity, this.pressure);
     }
   }
 }
 
 // --- Concrete observers ---
-// Each reacts to the same price update in its own way.
+// Each display reacts to the same data in its own way.
 
-class PriceDisplay implements PriceObserver {
-  constructor(private name: string) {}
+class CurrentConditionsDisplay implements WeatherDisplay {
+  private temperature = 0;
+  private humidity = 0;
 
-  update(symbol: string, price: number): void {
-    console.log(`  [${this.name}] ${symbol}: $${price.toFixed(2)}`);
+  update(temperature: number, humidity: number, _pressure: number): void {
+    this.temperature = temperature;
+    this.humidity = humidity;
+    this.display();
+  }
+
+  display(): void {
+    console.log(`Current: ${this.temperature}C, ${this.humidity.toFixed(1)}% humidity`);
   }
 }
 
-class PriceAlert implements PriceObserver {
-  constructor(
-    private symbol: string,
-    private threshold: number,
-    private direction: "above" | "below",
-  ) {}
+class StatisticsDisplay implements WeatherDisplay {
+  private temperatures: number[] = [];
 
-  update(symbol: string, price: number): void {
-    if (symbol !== this.symbol) return;
+  update(temperature: number, _humidity: number, _pressure: number): void {
+    this.temperatures.push(temperature);
+    this.display();
+  }
 
-    if (this.direction === "above" && price > this.threshold) {
-      console.log(`  [ALERT] ${symbol} is ABOVE $${this.threshold}! Current: $${price.toFixed(2)}`);
-    }
-    if (this.direction === "below" && price < this.threshold) {
-      console.log(`  [ALERT] ${symbol} is BELOW $${this.threshold}! Current: $${price.toFixed(2)}`);
-    }
+  display(): void {
+    const min = Math.min(...this.temperatures);
+    const max = Math.max(...this.temperatures);
+    const avg = this.temperatures.reduce((sum, t) => sum + t, 0) / this.temperatures.length;
+    console.log(`Stats: Avg/Max/Min = ${parseFloat(avg.toFixed(1))}/${max}/${min}`);
   }
 }
 
-class TradeLogger implements PriceObserver {
-  private history: { symbol: string; price: number; time: string }[] = [];
+class ForecastDisplay implements WeatherDisplay {
+  private lastPressure = 0;
+  private currentPressure = 0;
+  private firstReading = true;
 
-  update(symbol: string, price: number): void {
-    this.history.push({
-      symbol,
-      price,
-      time: new Date().toLocaleTimeString(),
-    });
+  update(_temperature: number, _humidity: number, pressure: number): void {
+    this.lastPressure = this.currentPressure;
+    this.currentPressure = pressure;
+
+    if (this.firstReading) {
+      this.lastPressure = pressure; // no previous reading to compare
+      this.firstReading = false;
+    }
+
+    this.display();
   }
 
-  printLog(): void {
-    console.log("  [Trade Log]");
-    for (const entry of this.history) {
-      console.log(`    ${entry.time} | ${entry.symbol}: $${entry.price.toFixed(2)}`);
+  display(): void {
+    if (this.currentPressure > this.lastPressure) {
+      console.log("Forecast: Improving weather ahead");
+    } else if (this.currentPressure < this.lastPressure) {
+      console.log("Forecast: Cooler, rainy weather ahead");
+    } else {
+      console.log("Forecast: More of the same");
     }
   }
 }
 
 // --- Usage ---
+// The WeatherStation knows nothing about specific display types.
+// Adding a new display type requires no changes to WeatherStation.
 
-const ticker = new StockTicker();
+const station = new WeatherStation();
 
-const mainDisplay = new PriceDisplay("Main Screen");
-const mobileDisplay = new PriceDisplay("Mobile App");
-const alert = new PriceAlert("AAPL", 180, "above");
-const logger = new TradeLogger();
+const currentDisplay = new CurrentConditionsDisplay();
+const statsDisplay = new StatisticsDisplay();
+const forecastDisplay = new ForecastDisplay();
 
-// Subscribe observers to different stocks
-ticker.subscribe("AAPL", mainDisplay);
-ticker.subscribe("AAPL", mobileDisplay);
-ticker.subscribe("AAPL", alert);
-ticker.subscribe("AAPL", logger);
-ticker.subscribe("GOOG", mainDisplay);
-ticker.subscribe("GOOG", logger);
+station.registerDisplay(currentDisplay);
+station.registerDisplay(statsDisplay);
+station.registerDisplay(forecastDisplay);
 
-console.log("=== Price updates ===");
-ticker.setPrice("AAPL", 175.50);
-console.log();
-ticker.setPrice("GOOG", 141.20);
-console.log();
-ticker.setPrice("AAPL", 182.30); // triggers alert
-console.log();
+console.log("=== Reading 1: 26.5C, 65%, 1013.1hPa ===");
+station.setMeasurements(26.5, 65, 1013.1);
 
-console.log("=== Mobile unsubscribes ===");
-ticker.unsubscribe("AAPL", mobileDisplay);
-ticker.setPrice("AAPL", 178.90);
-console.log();
+console.log("\n=== Reading 2: 28.2C, 70%, 1012.5hPa ===");
+station.setMeasurements(28.2, 70, 1012.5);
 
-console.log("=== Trade log (collected silently) ===");
-logger.printLog();
+console.log("\n=== Reading 3: 24.1C, 90%, 1009.2hPa ===");
+station.setMeasurements(24.1, 90, 1009.2);
+
+console.log("\n=== Removed StatisticsDisplay ===");
+station.removeDisplay(statsDisplay);
+
+console.log("\n=== Reading 4: 22.0C, 85%, 1007.8hPa ===");
+station.setMeasurements(22.0, 85, 1007.8);
+console.log("(No stats displayed — that display was removed)");

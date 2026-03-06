@@ -4,101 +4,131 @@
 
 // --- The product ---
 
-class HttpRequest {
+class Email {
   constructor(
-    public readonly url: string,
-    public readonly method: string,
-    public readonly headers: Record<string, string>,
-    public readonly queryParams: Record<string, string>,
-    public readonly body: string | null,
-    public readonly timeout: number,
+    public readonly from: string,
+    public readonly to: string[],
+    public readonly subject: string,
+    public readonly body: string,
+    public readonly cc: string[],
+    public readonly bcc: string[],
+    public readonly attachments: string[],
+    public readonly isHtml: boolean,
   ) {}
 
   display(): void {
-    const query = Object.entries(this.queryParams)
-      .map(([k, v]) => `${k}=${v}`)
-      .join("&");
-    const fullUrl = query ? `${this.url}?${query}` : this.url;
-
-    console.log(`${this.method} ${fullUrl}`);
-    for (const [key, value] of Object.entries(this.headers)) {
-      console.log(`  ${key}: ${value}`);
+    console.log(`From: ${this.from}`);
+    console.log(`To: ${this.to.join(", ")}`);
+    console.log(`Subject: ${this.subject}`);
+    if (this.cc.length > 0) {
+      console.log(`CC: ${this.cc.join(", ")}`);
     }
+    if (this.bcc.length > 0) {
+      console.log(`BCC: ${this.bcc.join(", ")}`);
+    }
+    console.log(`Format: ${this.isHtml ? "HTML" : "Plain Text"}`);
     if (this.body) {
-      console.log(`  Body: ${this.body}`);
+      console.log(`Body: ${this.body}`);
     }
-    console.log(`  Timeout: ${this.timeout}ms`);
+    if (this.attachments.length > 0) {
+      console.log(`Attachments: ${this.attachments.join(", ")}`);
+    }
   }
 }
 
 // --- The builder ---
 
-class HttpRequestBuilder {
-  private url: string;
-  private method = "GET";
-  private headers: Record<string, string> = {};
-  private queryParams: Record<string, string> = {};
-  private body: string | null = null;
-  private timeout = 5000;
+class EmailBuilder {
+  private _from: string;
+  private _to: string[] = [];
+  private _subject = "(no subject)";
+  private _body = "";
+  private _cc: string[] = [];
+  private _bcc: string[] = [];
+  private _attachments: string[] = [];
+  private _isHtml = false;
 
-  constructor(url: string) {
-    this.url = url;
+  constructor(from: string) {
+    this._from = from;
   }
 
-  setMethod(method: string): this {
-    this.method = method;
+  addTo(address: string): this {
+    this._to.push(address);
     return this;
   }
 
-  addHeader(key: string, value: string): this {
-    this.headers[key] = value;
+  setSubject(subject: string): this {
+    this._subject = subject;
     return this;
   }
 
-  addQueryParam(key: string, value: string): this {
-    this.queryParams[key] = value;
+  setBody(body: string): this {
+    this._body = body;
     return this;
   }
 
-  setBody(body: object): this {
-    this.body = JSON.stringify(body);
-    this.headers["Content-Type"] = "application/json";
+  addCc(address: string): this {
+    this._cc.push(address);
     return this;
   }
 
-  setTimeout(ms: number): this {
-    this.timeout = ms;
+  addBcc(address: string): this {
+    this._bcc.push(address);
     return this;
   }
 
-  build(): HttpRequest {
-    return new HttpRequest(
-      this.url,
-      this.method,
-      { ...this.headers },
-      { ...this.queryParams },
-      this.body,
-      this.timeout,
+  addAttachment(filename: string): this {
+    this._attachments.push(filename);
+    return this;
+  }
+
+  setHtml(isHtml: boolean): this {
+    this._isHtml = isHtml;
+    return this;
+  }
+
+  build(): Email {
+    return new Email(
+      this._from,
+      [...this._to],
+      this._subject,
+      this._body,
+      [...this._cc],
+      [...this._bcc],
+      [...this._attachments],
+      this._isHtml,
     );
   }
 }
 
 // --- Usage ---
-// Each request is built step-by-step. Only the relevant parts are set.
+// Each email is built step-by-step. Only the relevant parts are set.
 
-console.log("=== Simple GET ===");
-const getRequest = new HttpRequestBuilder("https://api.example.com/users")
-  .addQueryParam("page", "1")
-  .addQueryParam("limit", "10")
-  .addHeader("Authorization", "Bearer token123")
+console.log("=== Order Confirmation Email ===");
+const orderEmail = new EmailBuilder("noreply@shop.com")
+  .addTo("customer@example.com")
+  .setSubject("Your Order Confirmation")
+  .setBody("<h1>Thank you!</h1><p>Your order #1234 has been placed.</p>")
+  .setHtml(true)
+  .addAttachment("receipt.pdf")
   .build();
-getRequest.display();
+orderEmail.display();
 
-console.log("\n=== POST with body ===");
-const postRequest = new HttpRequestBuilder("https://api.example.com/users")
-  .setMethod("POST")
-  .addHeader("Authorization", "Bearer token123")
-  .setBody({ name: "Alice", email: "alice@example.com" })
-  .setTimeout(10000)
+console.log("\n=== Minimal Email ===");
+const minimalEmail = new EmailBuilder("admin@company.com")
+  .addTo("team@company.com")
   .build();
-postRequest.display();
+minimalEmail.display();
+
+console.log("\n=== Full-Featured Email ===");
+const fullEmail = new EmailBuilder("ceo@company.com")
+  .addTo("board@company.com")
+  .addTo("investors@company.com")
+  .setSubject("Q4 Results")
+  .setBody("Please find the quarterly report attached.")
+  .addCc("cfo@company.com")
+  .addBcc("legal@company.com")
+  .addAttachment("q4-report.pdf")
+  .addAttachment("financials.xlsx")
+  .build();
+fullEmail.display();

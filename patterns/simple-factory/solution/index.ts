@@ -4,52 +4,63 @@
 
 // --- Common interface ---
 
-interface Notifier {
-  send(to: string, message: string): void;
+interface PaymentProcessor {
+  processPayment(amount: number): void;
 }
 
 // --- Concrete implementations ---
 
-class EmailNotifier implements Notifier {
-  send(to: string, message: string): void {
-    console.log(`[EMAIL] To: ${to} | Subject: Notification | Body: ${message}`);
+class CreditCardProcessor implements PaymentProcessor {
+  processPayment(amount: number): void {
+    console.log(`[Credit Card] Processing payment of $${amount.toFixed(2)}`);
   }
 }
 
-class SmsNotifier implements Notifier {
-  send(to: string, message: string): void {
-    console.log(`[SMS] To: ${to} | Message: ${message}`);
+class PayPalProcessor implements PaymentProcessor {
+  processPayment(amount: number): void {
+    console.log(`[PayPal] Processing payment of $${amount.toFixed(2)}`);
   }
 }
 
-class PushNotifier implements Notifier {
-  send(to: string, message: string): void {
-    console.log(`[PUSH] To device: ${to} | Alert: ${message}`);
+class CryptoProcessor implements PaymentProcessor {
+  processPayment(amount: number): void {
+    console.log(`[Crypto] Processing payment of ${amount} BTC`);
   }
 }
 
 // --- The Factory ---
+// Returns the correct processor based on the method string.
+// Adding a new payment method only requires a new class and a new case here.
 
-type Channel = "email" | "sms" | "push";
+type PaymentMethod = "credit-card" | "paypal" | "crypto";
 
-function createNotifier(channel: Channel): Notifier {
-  switch (channel) {
-    case "email":
-      return new EmailNotifier();
-    case "sms":
-      return new SmsNotifier();
-    case "push":
-      return new PushNotifier();
+function createPaymentProcessor(method: PaymentMethod): PaymentProcessor {
+  switch (method) {
+    case "credit-card":
+      return new CreditCardProcessor();
+    case "paypal":
+      return new PayPalProcessor();
+    case "crypto":
+      return new CryptoProcessor();
   }
 }
 
 // --- Usage ---
-// The caller only depends on the Notifier interface and the factory.
-// It never imports or instantiates concrete classes directly.
+// The checkout code only depends on the PaymentProcessor interface and
+// the factory. It never imports or instantiates concrete classes directly.
 
-const channels: Channel[] = ["email", "sms", "push"];
+const methods: PaymentMethod[] = ["credit-card", "paypal", "crypto"];
 
-for (const channel of channels) {
-  const notifier = createNotifier(channel);
-  notifier.send("alice", "Your order has shipped!");
+for (const method of methods) {
+  const processor = createPaymentProcessor(method);
+  processor.processPayment(49.99);
 }
+
+// Individual usage matching the problem's example
+console.log("\n=== Individual transactions ===");
+
+const processor1 = createPaymentProcessor("paypal");
+processor1.processPayment(49.99);
+
+const processor2 = createPaymentProcessor("crypto");
+processor2.processPayment(0.005);

@@ -4,109 +4,159 @@
 // but the facade offers a convenient shortcut for common workflows.
 
 // --- Subsystem classes ---
-// Each one handles a specific concern. The client shouldn't need
-// to know the correct order or wiring between them.
+// Each one handles a specific piece of the home theater.
+// The client shouldn't need to know the correct order or wiring between them.
 
-class InventoryService {
-  check(productId: string, quantity: number): boolean {
-    const inStock = quantity <= 5;
-    console.log(`  [Inventory] ${productId}: ${inStock ? "in stock" : "out of stock"}`);
-    return inStock;
+class Amplifier {
+  on(): void {
+    console.log("  [Amplifier] Turning on");
   }
 
-  reserve(productId: string, quantity: number): void {
-    console.log(`  [Inventory] Reserved ${quantity}x ${productId}`);
-  }
-}
-
-class PaymentService {
-  charge(userId: string, amount: number): { transactionId: string; success: boolean } {
-    const success = amount > 0;
-    const transactionId = `txn_${Math.random().toString(36).slice(2, 8)}`;
-    console.log(`  [Payment] Charged $${amount} to ${userId}: ${success ? "OK" : "FAILED"} (${transactionId})`);
-    return { transactionId, success };
+  off(): void {
+    console.log("  [Amplifier] Turning off");
   }
 
-  refund(transactionId: string): void {
-    console.log(`  [Payment] Refunded ${transactionId}`);
+  setVolume(level: number): void {
+    console.log(`  [Amplifier] Setting volume to ${level}`);
+  }
+
+  setInput(source: string): void {
+    console.log(`  [Amplifier] Setting input to ${source}`);
   }
 }
 
-class InvoiceService {
-  create(userId: string, productId: string, amount: number, transactionId: string): string {
-    const invoiceId = `inv_${Math.random().toString(36).slice(2, 8)}`;
-    console.log(`  [Invoice] Created ${invoiceId} for ${userId}`);
-    return invoiceId;
+class Projector {
+  on(): void {
+    console.log("  [Projector] Turning on");
+  }
+
+  off(): void {
+    console.log("  [Projector] Turning off");
+  }
+
+  setResolution(res: "720p" | "1080p" | "4K"): void {
+    console.log(`  [Projector] Setting resolution to ${res}`);
   }
 }
 
-class EmailService {
-  sendConfirmation(userId: string, invoiceId: string): void {
-    console.log(`  [Email] Order confirmation sent to ${userId} (${invoiceId})`);
+class StreamingPlayer {
+  on(): void {
+    console.log("  [StreamingPlayer] Turning on");
   }
 
-  sendFailure(userId: string): void {
-    console.log(`  [Email] Payment failure notice sent to ${userId}`);
+  off(): void {
+    console.log("  [StreamingPlayer] Turning off");
+  }
+
+  play(movie: string): void {
+    console.log(`  [StreamingPlayer] Playing "${movie}"`);
+  }
+
+  stop(): void {
+    console.log("  [StreamingPlayer] Stopping playback");
   }
 }
 
-class ShippingService {
-  schedule(userId: string, productId: string, quantity: number): void {
-    console.log(`  [Shipping] Scheduled ${quantity}x ${productId} for ${userId}`);
+class TheaterLights {
+  dim(level: number): void {
+    console.log(`  [TheaterLights] Dimming to ${level}%`);
+  }
+
+  on(): void {
+    console.log("  [TheaterLights] Turning on (full brightness)");
+  }
+}
+
+class Subwoofer {
+  on(): void {
+    console.log("  [Subwoofer] Turning on");
+  }
+
+  off(): void {
+    console.log("  [Subwoofer] Turning off");
+  }
+
+  setBass(level: number): void {
+    console.log(`  [Subwoofer] Setting bass to ${level}`);
   }
 }
 
 // --- The Facade ---
-// Orchestrates the subsystems in the correct order.
-// The client makes one call instead of five.
+// Orchestrates all subsystems in the correct order.
+// The client makes one call instead of many.
 
-class OrderFacade {
-  private inventory = new InventoryService();
-  private payment = new PaymentService();
-  private invoice = new InvoiceService();
-  private email = new EmailService();
-  private shipping = new ShippingService();
+class HomeTheaterFacade {
+  private amplifier: Amplifier;
+  private projector: Projector;
+  private player: StreamingPlayer;
+  private lights: TheaterLights;
+  private subwoofer: Subwoofer;
 
-  placeOrder(userId: string, productId: string, quantity: number, price: number): boolean {
-    const amount = quantity * price;
+  constructor() {
+    this.amplifier = new Amplifier();
+    this.projector = new Projector();
+    this.player = new StreamingPlayer();
+    this.lights = new TheaterLights();
+    this.subwoofer = new Subwoofer();
+  }
 
-    // 1. Check inventory
-    if (!this.inventory.check(productId, quantity)) {
-      console.log("  Order failed: out of stock");
-      return false;
-    }
+  watchMovie(movie: string): void {
+    console.log(`Getting ready to watch "${movie}"...`);
 
-    // 2. Reserve stock
-    this.inventory.reserve(productId, quantity);
+    // 1. Turn on the projector and set resolution to 4K
+    this.projector.on();
+    this.projector.setResolution("4K");
 
-    // 3. Charge payment
-    const payment = this.payment.charge(userId, amount);
-    if (!payment.success) {
-      this.email.sendFailure(userId);
-      return false;
-    }
+    // 2. Turn on the amplifier, set input to "streaming", and set volume to 7
+    this.amplifier.on();
+    this.amplifier.setInput("streaming");
+    this.amplifier.setVolume(7);
 
-    // 4. Create invoice
-    const invoiceId = this.invoice.create(userId, productId, amount, payment.transactionId);
+    // 3. Turn on the subwoofer and set bass to 8
+    this.subwoofer.on();
+    this.subwoofer.setBass(8);
 
-    // 5. Schedule shipping
-    this.shipping.schedule(userId, productId, quantity);
+    // 4. Dim the lights to 20%
+    this.lights.dim(20);
 
-    // 6. Send confirmation
-    this.email.sendConfirmation(userId, invoiceId);
+    // 5. Turn on the streaming player and play the movie
+    this.player.on();
+    this.player.play(movie);
 
-    return true;
+    console.log(`Enjoy the movie!`);
+  }
+
+  endMovie(): void {
+    console.log("Shutting down the home theater...");
+
+    // 1. Stop the streaming player and turn it off
+    this.player.stop();
+    this.player.off();
+
+    // 2. Turn off the subwoofer
+    this.subwoofer.off();
+
+    // 3. Turn off the amplifier
+    this.amplifier.off();
+
+    // 4. Turn off the projector
+    this.projector.off();
+
+    // 5. Turn the lights back on (full brightness)
+    this.lights.on();
+
+    console.log("Home theater shut down. Goodnight!");
   }
 }
 
 // --- Usage ---
-// The client doesn't know about inventory, payment, invoicing,
-// shipping, or email. It just places an order.
+// The client doesn't know about projectors, amplifiers, subwoofers,
+// lights, or streaming players. It just watches a movie.
 
-const shop = new OrderFacade();
+const theater = new HomeTheaterFacade();
 
-console.log("=== Order 1: Success ===");
-shop.placeOrder("user_alice", "keyboard_mx", 2, 149.99);
+console.log("=== Movie Night ===\n");
+theater.watchMovie("Inception");
 
-console.log("\n=== Order 2: Out of stock ===");
-shop.placeOrder("user_bob", "monitor_4k", 10, 599.99);
+console.log("\n=== Movie Over ===\n");
+theater.endMovie();

@@ -3,190 +3,231 @@
 // current state object. State transitions swap the state object,
 // eliminating conditionals.
 
-// Example: a document workflow — Draft → Review → Published,
-// where each state changes what actions are allowed.
+// Example: a vending machine where the same buttons behave differently
+// depending on whether the machine is idle, has money, dispensing, or sold out.
 
 // --- State interface ---
 
-interface DocumentState {
-  edit(doc: DocumentContext, content: string): void;
-  submit(doc: DocumentContext): void;
-  approve(doc: DocumentContext): void;
-  reject(doc: DocumentContext): void;
-  publish(doc: DocumentContext): void;
+interface VendingState {
+  insertCoin(machine: VendingMachine, amount: number): void;
+  selectProduct(machine: VendingMachine, name: string): void;
+  dispense(machine: VendingMachine): void;
+  refund(machine: VendingMachine): void;
   getName(): string;
 }
 
 // --- Context ---
 
-class DocumentContext {
-  private state: DocumentState;
-  public content: string;
-  public title: string;
+class VendingMachine {
+  private state: VendingState;
+  public currentBalance = 0;
+  public inventory: Map<string, { price: number; quantity: number }>;
+  public selectedProduct: string | null = null;
 
-  constructor(title: string) {
-    this.title = title;
-    this.content = "";
-    this.state = new DraftState();
-    console.log(`  "${this.title}" created in ${this.state.getName()} state.`);
+  constructor(inventory: Map<string, { price: number; quantity: number }>) {
+    this.inventory = inventory;
+    this.state = new IdleState();
   }
 
-  setState(state: DocumentState): void {
-    console.log(`  "${this.title}" transitioned: ${this.state.getName()} → ${state.getName()}`);
+  setState(state: VendingState): void {
     this.state = state;
   }
 
-  // Delegates to current state
-  edit(content: string): void { this.state.edit(this, content); }
-  submit(): void { this.state.submit(this); }
-  approve(): void { this.state.approve(this); }
-  reject(): void { this.state.reject(this); }
-  publish(): void { this.state.publish(this); }
-
-  display(): void {
-    console.log(`  [${this.state.getName()}] "${this.title}": ${this.content || "(empty)"}`);
+  getStateName(): string {
+    return this.state.getName();
   }
+
+  // Check if every product has zero quantity
+  isAllSoldOut(): boolean {
+    for (const [, item] of this.inventory) {
+      if (item.quantity > 0) return false;
+    }
+    return true;
+  }
+
+  // Delegates to current state
+  insertCoin(amount: number): void { this.state.insertCoin(this, amount); }
+  selectProduct(name: string): void { this.state.selectProduct(this, name); }
+  dispense(): void { this.state.dispense(this); }
+  refund(): void { this.state.refund(this); }
 }
 
 // --- Concrete states ---
+// Each state handles all actions in its own way.
 
-class DraftState implements DocumentState {
-  getName(): string { return "Draft"; }
+class IdleState implements VendingState {
+  getName(): string { return "Idle"; }
 
-  edit(doc: DocumentContext, content: string): void {
-    doc.content = content;
-    console.log(`  Edited draft: "${content}"`);
+  insertCoin(machine: VendingMachine, amount: number): void {
+    machine.currentBalance += amount;
+    console.log(`  [Idle] Inserted $${(amount / 100).toFixed(2)} → balance: $${(machine.currentBalance / 100).toFixed(2)}`);
+    machine.setState(new HasMoneyState());
   }
 
-  submit(doc: DocumentContext): void {
-    if (!doc.content) {
-      console.log("  Cannot submit — document is empty.");
+  selectProduct(): void {
+    console.log("  [Idle] Please insert money first");
+  }
+
+  dispense(): void {
+    console.log("  [Idle] No product selected");
+  }
+
+  refund(): void {
+    console.log("  [Idle] No money to refund");
+  }
+}
+
+class HasMoneyState implements VendingState {
+  getName(): string { return "HasMoney"; }
+
+  insertCoin(machine: VendingMachine, amount: number): void {
+    machine.currentBalance += amount;
+    console.log(`  [HasMoney] Inserted $${(amount / 100).toFixed(2)} → balance: $${(machine.currentBalance / 100).toFixed(2)}`);
+  }
+
+  selectProduct(machine: VendingMachine, name: string): void {
+    const product = machine.inventory.get(name);
+
+    if (!product) {
+      console.log(`  [HasMoney] Product "${name}" not found`);
       return;
     }
-    doc.setState(new ReviewState());
+
+    if (product.quantity <= 0) {
+      console.log(`  [HasMoney] "${name}" is out of stock`);
+      return;
+    }
+
+    if (machine.currentBalance < product.price) {
+      const needed = product.price - machine.currentBalance;
+      console.log(`  [HasMoney] Insufficient funds for "${name}". Need $${(needed / 100).toFixed(2)} more`);
+      return;
+    }
+
+    // Enough money, product in stock — transition to Dispensing
+    machine.selectedProduct = name;
+    console.log(`  [HasMoney] Selected "${name}" ($${(product.price / 100).toFixed(2)}) → Ready to dispense`);
+    machine.setState(new DispensingState());
   }
 
-  approve(): void {
-    console.log("  Cannot approve — document is still a draft. Submit first.");
+  dispense(): void {
+    console.log("  [HasMoney] Select a product first");
   }
 
-  reject(): void {
-    console.log("  Cannot reject — document is still a draft.");
-  }
-
-  publish(): void {
-    console.log("  Cannot publish — document must be approved first.");
-  }
-}
-
-class ReviewState implements DocumentState {
-  getName(): string { return "Review"; }
-
-  edit(): void {
-    console.log("  Cannot edit — document is under review.");
-  }
-
-  submit(): void {
-    console.log("  Already submitted for review.");
-  }
-
-  approve(doc: DocumentContext): void {
-    console.log("  Document approved!");
-    doc.setState(new ApprovedState());
-  }
-
-  reject(doc: DocumentContext): void {
-    console.log("  Document rejected — returning to draft.");
-    doc.setState(new DraftState());
-  }
-
-  publish(): void {
-    console.log("  Cannot publish — document must be approved first.");
+  refund(machine: VendingMachine): void {
+    console.log(`  [HasMoney] Refunding $${(machine.currentBalance / 100).toFixed(2)}`);
+    machine.currentBalance = 0;
+    machine.setState(new IdleState());
   }
 }
 
-class ApprovedState implements DocumentState {
-  getName(): string { return "Approved"; }
+class DispensingState implements VendingState {
+  getName(): string { return "Dispensing"; }
 
-  edit(): void {
-    console.log("  Cannot edit — document is approved. Create a new revision.");
+  insertCoin(): void {
+    console.log("  [Dispensing] Please wait, dispensing in progress");
   }
 
-  submit(): void {
-    console.log("  Already approved — no need to submit.");
+  selectProduct(): void {
+    console.log("  [Dispensing] Please wait, dispensing in progress");
   }
 
-  approve(): void {
-    console.log("  Already approved.");
+  dispense(machine: VendingMachine): void {
+    const name = machine.selectedProduct!;
+    const product = machine.inventory.get(name)!;
+
+    // Deduct price, decrement inventory
+    machine.currentBalance -= product.price;
+    product.quantity--;
+
+    const change = machine.currentBalance;
+
+    if (change > 0) {
+      console.log(`  [Dispensing] "${name}" dispensed! balance: $${(change / 100).toFixed(2)}`);
+    } else {
+      console.log(`  [Dispensing] "${name}" dispensed! Change: $${(0 / 100).toFixed(2)} returned`);
+    }
+
+    machine.selectedProduct = null;
+
+    // Determine next state
+    if (machine.isAllSoldOut()) {
+      machine.setState(new SoldOutState());
+    } else if (machine.currentBalance > 0) {
+      machine.setState(new HasMoneyState());
+    } else {
+      machine.setState(new IdleState());
+    }
   }
 
-  reject(doc: DocumentContext): void {
-    console.log("  Approval revoked — returning to draft.");
-    doc.setState(new DraftState());
-  }
-
-  publish(doc: DocumentContext): void {
-    console.log("  Document published!");
-    doc.setState(new PublishedState());
+  refund(): void {
+    console.log("  [Dispensing] Please wait, dispensing in progress");
   }
 }
 
-class PublishedState implements DocumentState {
-  getName(): string { return "Published"; }
+class SoldOutState implements VendingState {
+  getName(): string { return "SoldOut"; }
 
-  edit(): void {
-    console.log("  Cannot edit — document is published.");
+  insertCoin(): void {
+    console.log("  [SoldOut] Machine is sold out");
   }
 
-  submit(): void {
-    console.log("  Cannot submit — document is already published.");
+  selectProduct(): void {
+    console.log("  [SoldOut] Machine is sold out");
   }
 
-  approve(): void {
-    console.log("  Cannot approve — document is already published.");
+  dispense(): void {
+    console.log("  [SoldOut] Machine is sold out");
   }
 
-  reject(): void {
-    console.log("  Cannot reject — document is already published.");
-  }
-
-  publish(): void {
-    console.log("  Already published.");
+  refund(machine: VendingMachine): void {
+    if (machine.currentBalance > 0) {
+      console.log(`  [SoldOut] Refunding $${(machine.currentBalance / 100).toFixed(2)}`);
+      machine.currentBalance = 0;
+    } else {
+      console.log("  [SoldOut] No money to refund");
+    }
   }
 }
 
 // --- Usage ---
 // Same method calls, completely different behavior depending on state.
 
-const doc = new DocumentContext("Design Patterns Guide");
+const inventory = new Map<string, { price: number; quantity: number }>([
+  ["Cola", { price: 125, quantity: 2 }],
+  ["Water", { price: 100, quantity: 1 }],
+  ["Chips", { price: 150, quantity: 1 }],
+]);
 
-console.log("\n=== Try invalid actions in Draft ===");
-doc.approve();
-doc.publish();
-doc.submit(); // empty doc
+const machine = new VendingMachine(inventory);
 
-console.log("\n=== Edit and submit ===");
-doc.edit("An introduction to design patterns...");
-doc.display();
-doc.submit();
+console.log("=== Buy a Cola ===");
+machine.insertCoin(100);  // $1.00
+machine.insertCoin(50);   // $0.50 → balance: $1.50
+machine.selectProduct("Cola"); // $1.25 → Dispensing
+machine.dispense();        // Cola dispensed, $0.25 change
 
-console.log("\n=== Try editing during review ===");
-doc.edit("Trying to sneak in changes...");
+console.log("\n=== Insert money, buy Water, refund remaining ===");
+machine.insertCoin(200);  // $2.00
+machine.selectProduct("Water"); // $1.00 → Dispensing
+machine.dispense();        // Water dispensed, balance: $1.00
+machine.refund();          // refund $1.00
 
-console.log("\n=== Reject back to draft ===");
-doc.reject();
-doc.edit("Revised introduction to design patterns...");
-doc.submit();
+console.log("\n=== Try invalid actions ===");
+machine.selectProduct("Cola"); // no money inserted
+machine.dispense();            // no product selected
+machine.refund();              // no money
 
-console.log("\n=== Approve and publish ===");
-doc.approve();
-doc.display();
-doc.publish();
-doc.display();
+console.log("\n=== Sell remaining items until sold out ===");
+machine.insertCoin(150);
+machine.selectProduct("Chips");
+machine.dispense();
 
-console.log("\n=== Try everything on published doc ===");
-doc.edit("New content");
-doc.submit();
-doc.approve();
-doc.reject();
-doc.publish();
+machine.insertCoin(125);
+machine.selectProduct("Cola"); // last Cola
+machine.dispense();            // now all sold out
+
+console.log("\n=== Machine is sold out ===");
+machine.insertCoin(100);
+machine.selectProduct("Cola");
+machine.dispense();

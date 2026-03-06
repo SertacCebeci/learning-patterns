@@ -4,87 +4,85 @@
 
 // --- Abstract products ---
 
-interface Button {
-  render(): void;
+interface Connection {
+  connect(): void;
 }
 
-interface Input {
-  render(): void;
+interface QueryBuilder {
+  buildSelect(table: string, columns: string[]): void;
 }
 
 // --- Abstract factory ---
 
-interface UIFactory {
-  createButton(label: string): Button;
-  createInput(placeholder: string): Input;
+interface DatabaseFactory {
+  createConnection(): Connection;
+  createQueryBuilder(): QueryBuilder;
 }
 
-// --- Web family ---
+// --- PostgreSQL family ---
 
-class WebButton implements Button {
-  constructor(private label: string) {}
-  render(): void {
-    console.log(`<button class="btn">${this.label}</button>`);
-  }
-}
-
-class WebInput implements Input {
-  constructor(private placeholder: string) {}
-  render(): void {
-    console.log(`<input type="text" placeholder="${this.placeholder}" />`);
+class PostgresConnection implements Connection {
+  connect(): void {
+    console.log("Connecting to PostgreSQL database...");
   }
 }
 
-class WebUIFactory implements UIFactory {
-  createButton(label: string): Button {
-    return new WebButton(label);
-  }
-  createInput(placeholder: string): Input {
-    return new WebInput(placeholder);
+class PostgresQueryBuilder implements QueryBuilder {
+  buildSelect(table: string, columns: string[]): void {
+    console.log(`SELECT ${columns.join(", ")} FROM ${table}`);
   }
 }
 
-// --- Mobile family ---
-
-class MobileButton implements Button {
-  constructor(private label: string) {}
-  render(): void {
-    console.log(`[TouchableOpacity] ${this.label}`);
+class PostgresFactory implements DatabaseFactory {
+  createConnection(): Connection {
+    return new PostgresConnection();
+  }
+  createQueryBuilder(): QueryBuilder {
+    return new PostgresQueryBuilder();
   }
 }
 
-class MobileInput implements Input {
-  constructor(private placeholder: string) {}
-  render(): void {
-    console.log(`[TextInput] placeholder="${this.placeholder}"`);
+// --- MongoDB family ---
+
+class MongoConnection implements Connection {
+  connect(): void {
+    console.log("Connecting to MongoDB cluster...");
   }
 }
 
-class MobileUIFactory implements UIFactory {
-  createButton(label: string): Button {
-    return new MobileButton(label);
+class MongoQueryBuilder implements QueryBuilder {
+  buildSelect(table: string, columns: string[]): void {
+    const projection = columns.map((col) => `${col}: 1`).join(", ");
+    console.log(`db.collection("${table}").find({ ${projection} })`);
   }
-  createInput(placeholder: string): Input {
-    return new MobileInput(placeholder);
+}
+
+class MongoFactory implements DatabaseFactory {
+  createConnection(): Connection {
+    return new MongoConnection();
+  }
+  createQueryBuilder(): QueryBuilder {
+    return new MongoQueryBuilder();
   }
 }
 
 // --- Application code ---
-// Works entirely through the UIFactory interface.
-// Swapping the factory switches the entire component family at once.
+// Works entirely through the DatabaseFactory interface.
+// Swapping the factory switches the entire product family at once.
 
-function renderLoginForm(factory: UIFactory): void {
-  const usernameInput = factory.createInput("Enter username");
-  const passwordInput = factory.createInput("Enter password");
-  const submitButton = factory.createButton("Log In");
-
-  usernameInput.render();
-  passwordInput.render();
-  submitButton.render();
+function fetchUsers(factory: DatabaseFactory): void {
+  const conn = factory.createConnection();
+  conn.connect();
+  const qb = factory.createQueryBuilder();
+  qb.buildSelect("users", ["id", "name", "email"]);
 }
 
-console.log("=== Web ===");
-renderLoginForm(new WebUIFactory());
+console.log("=== PostgreSQL ===");
+fetchUsers(new PostgresFactory());
+// Connecting to PostgreSQL database...
+// SELECT id, name, email FROM users
 
-console.log("\n=== Mobile ===");
-renderLoginForm(new MobileUIFactory());
+console.log("\n=== MongoDB ===");
+fetchUsers(new MongoFactory());
+// Connecting to MongoDB cluster...
+// db.collection("users").find({ id: 1, name: 1, email: 1 })

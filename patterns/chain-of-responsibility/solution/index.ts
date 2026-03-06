@@ -2,158 +2,146 @@
 // Passes a request along a chain of handlers. Each handler either
 // processes the request or passes it to the next handler.
 
-// Example: an HTTP middleware pipeline that validates, authenticates,
-// rate-limits, and then handles the request.
-
 // --- Request object ---
 
-interface HttpRequest {
-  path: string;
-  method: string;
-  headers: Record<string, string>;
-  body?: string;
-  ip: string;
+interface SupportTicket {
+  id: number;
+  category: string;
+  priority: "low" | "medium" | "high" | "critical";
+  message: string;
+  customerTier: "basic" | "premium" | "enterprise";
 }
 
-interface HttpResponse {
-  status: number;
-  body: string;
-}
+// --- Handler base class ---
 
-// --- Handler interface ---
+abstract class SupportHandler {
+  private next: SupportHandler | null = null;
 
-abstract class Middleware {
-  private next: Middleware | null = null;
-
-  setNext(handler: Middleware): Middleware {
+  setNext(handler: SupportHandler): SupportHandler {
     this.next = handler;
     return handler; // allows chaining: a.setNext(b).setNext(c)
   }
 
-  handle(req: HttpRequest): HttpResponse {
+  handle(ticket: SupportTicket): string {
     if (this.next) {
-      return this.next.handle(req);
+      return this.next.handle(ticket);
     }
-    return { status: 404, body: "No handler found" };
+    // End of chain -- no handler could resolve it
+    console.log(`  [No Handler] Ticket #${ticket.id} logged for manual review`);
+    return `Ticket #${ticket.id} has been logged for manual review.`;
   }
 }
 
 // --- Concrete handlers ---
 
-class RateLimiter extends Middleware {
-  private requestCounts = new Map<string, number>();
-  private limit: number;
-
-  constructor(limit: number) {
-    super();
-    this.limit = limit;
-  }
-
-  handle(req: HttpRequest): HttpResponse {
-    const count = (this.requestCounts.get(req.ip) ?? 0) + 1;
-    this.requestCounts.set(req.ip, count);
-
-    if (count > this.limit) {
-      console.log(`  [RateLimiter] BLOCKED ${req.ip} (${count}/${this.limit})`);
-      return { status: 429, body: "Too many requests" };
+class FAQBot extends SupportHandler {
+  handle(ticket: SupportTicket): string {
+    if (ticket.category === "general" && ticket.priority === "low") {
+      console.log(`  [FAQ Bot] Handled ticket #${ticket.id} -- sent automated FAQ link`);
+      return `Here is an FAQ link that addresses your question: https://support.example.com/faq`;
     }
 
-    console.log(`  [RateLimiter] OK (${count}/${this.limit})`);
-    return super.handle(req);
+    console.log(`  [FAQ Bot] Passed ticket #${ticket.id} to next handler`);
+    return super.handle(ticket);
   }
 }
 
-class AuthMiddleware extends Middleware {
-  handle(req: HttpRequest): HttpResponse {
-    const token = req.headers["authorization"];
-
-    if (!token) {
-      console.log("  [Auth] REJECTED — no token");
-      return { status: 401, body: "Unauthorized" };
+class JuniorAgent extends SupportHandler {
+  handle(ticket: SupportTicket): string {
+    if (ticket.priority === "medium") {
+      console.log(`  [Junior Agent] Handled ticket #${ticket.id} -- sent template reply`);
+      return `Thank you for contacting support. We've received your ${ticket.category} inquiry and a team member will follow up shortly.`;
     }
 
-    if (!token.startsWith("Bearer ")) {
-      console.log("  [Auth] REJECTED — invalid token format");
-      return { status: 401, body: "Invalid token" };
-    }
-
-    console.log("  [Auth] OK");
-    return super.handle(req);
+    console.log(`  [Junior Agent] Passed ticket #${ticket.id} to next handler`);
+    return super.handle(ticket);
   }
 }
 
-class ValidationMiddleware extends Middleware {
-  handle(req: HttpRequest): HttpResponse {
-    if (req.method === "POST" && !req.body) {
-      console.log("  [Validation] REJECTED — POST with no body");
-      return { status: 400, body: "Request body required" };
+class SeniorAgent extends SupportHandler {
+  handle(ticket: SupportTicket): string {
+    if (ticket.priority === "high" || ticket.customerTier === "premium") {
+      console.log(`  [Senior Agent] Handled ticket #${ticket.id} -- provided personalized response`);
+      return `A senior agent has reviewed your ${ticket.category} issue and is working on a personalized resolution.`;
     }
 
-    console.log("  [Validation] OK");
-    return super.handle(req);
+    console.log(`  [Senior Agent] Passed ticket #${ticket.id} to next handler`);
+    return super.handle(ticket);
   }
 }
 
-class RouteHandler extends Middleware {
-  handle(req: HttpRequest): HttpResponse {
-    console.log(`  [Router] Handling ${req.method} ${req.path}`);
-    return { status: 200, body: `Handled ${req.method} ${req.path}` };
+class Manager extends SupportHandler {
+  handle(ticket: SupportTicket): string {
+    if (ticket.priority === "critical" || ticket.customerTier === "enterprise") {
+      console.log(`  [Manager] Handled ticket #${ticket.id} -- escalated with dedicated rep`);
+      return `Your ticket has been escalated to management. A dedicated representative has been assigned to your case.`;
+    }
+
+    console.log(`  [Manager] Passed ticket #${ticket.id} to next handler`);
+    return super.handle(ticket);
   }
 }
 
 // --- Build the chain ---
 
-const rateLimiter = new RateLimiter(2);
-const auth = new AuthMiddleware();
-const validation = new ValidationMiddleware();
-const router = new RouteHandler();
+const faqBot = new FAQBot();
+const juniorAgent = new JuniorAgent();
+const seniorAgent = new SeniorAgent();
+const manager = new Manager();
 
-// Link: RateLimiter → Auth → Validation → Router
-rateLimiter.setNext(auth).setNext(validation).setNext(router);
+// Link: FAQ Bot -> Junior Agent -> Senior Agent -> Manager
+faqBot.setNext(juniorAgent).setNext(seniorAgent).setNext(manager);
 
 // --- Usage ---
 
-function sendRequest(req: HttpRequest): void {
-  console.log(`\n>>> ${req.method} ${req.path} from ${req.ip}`);
-  const res = rateLimiter.handle(req);
-  console.log(`<<< ${res.status}: ${res.body}`);
+function submitTicket(ticket: SupportTicket): void {
+  console.log(`\n>>> Ticket #${ticket.id} (${ticket.category}, ${ticket.priority}, ${ticket.customerTier})`);
+  console.log(`    "${ticket.message}"`);
+  const response = faqBot.handle(ticket);
+  console.log(`<<< ${response}`);
 }
 
-// 1. Valid request — passes through all handlers
-sendRequest({
-  path: "/api/users",
-  method: "GET",
-  headers: { authorization: "Bearer abc123" },
-  ip: "192.168.1.1",
+// 1. General low-priority ticket -- handled by FAQ Bot
+submitTicket({
+  id: 1,
+  category: "general",
+  priority: "low",
+  message: "How do I reset my password?",
+  customerTier: "basic",
 });
 
-// 2. No auth token — stopped at AuthMiddleware
-sendRequest({
-  path: "/api/users",
-  method: "GET",
-  headers: {},
-  ip: "192.168.1.2",
+// 2. Billing medium-priority ticket -- passed by FAQ Bot, handled by Junior Agent
+submitTicket({
+  id: 2,
+  category: "billing",
+  priority: "medium",
+  message: "I was double-charged for my last order.",
+  customerTier: "basic",
 });
 
-// 3. POST with no body — stopped at ValidationMiddleware
-sendRequest({
-  path: "/api/users",
-  method: "POST",
-  headers: { authorization: "Bearer abc123" },
-  ip: "192.168.1.3",
+// 3. Technical high-priority from premium customer -- handled by Senior Agent
+submitTicket({
+  id: 3,
+  category: "technical",
+  priority: "high",
+  message: "My API integration is returning 500 errors.",
+  customerTier: "premium",
 });
 
-// 4-5. Rate limiting — third request from same IP gets blocked
-sendRequest({
-  path: "/api/users",
-  method: "GET",
-  headers: { authorization: "Bearer abc123" },
-  ip: "192.168.1.1",
+// 4. Critical outage from enterprise customer -- handled by Manager
+submitTicket({
+  id: 4,
+  category: "outage",
+  priority: "critical",
+  message: "Our entire production environment is down!",
+  customerTier: "enterprise",
 });
 
-sendRequest({
-  path: "/api/users",
-  method: "GET",
-  headers: { authorization: "Bearer abc123" },
-  ip: "192.168.1.1",
+// 5. Legal low-priority from basic customer -- no handler matches, logged for manual review
+submitTicket({
+  id: 5,
+  category: "legal",
+  priority: "low",
+  message: "I need a copy of your data processing agreement.",
+  customerTier: "basic",
 });

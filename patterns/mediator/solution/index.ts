@@ -2,152 +2,151 @@
 // Components communicate through a central mediator instead of directly.
 // The mediator contains the coordination logic, keeping components decoupled.
 
-// Example: an airport control tower coordinating planes on runways.
+// Example: a chat room where users communicate through a central coordinator.
+// Users have no direct references to each other — all messages and
+// notifications flow through the ChatRoom.
 
 // --- Mediator interface ---
 
-interface AirTrafficControl {
-  requestLanding(plane: Plane): void;
-  requestTakeoff(plane: Plane): void;
-  notifyRunwayClear(runway: Runway): void;
+interface ChatMediator {
+  registerUser(user: User): void;
+  sendMessage(from: User, content: string): void;
+  sendPrivateMessage(from: User, toName: string, content: string): void;
+  changeStatus(user: User, status: "online" | "away" | "offline"): void;
 }
 
-// --- Colleague: Plane ---
+// --- Colleague: User ---
+// Users only know about the mediator, never about other users.
 
-class Plane {
-  constructor(
-    public readonly callsign: string,
-    private tower: AirTrafficControl,
-  ) {}
-
-  requestLanding(): void {
-    console.log(`  [${this.callsign}] Requesting landing.`);
-    this.tower.requestLanding(this);
-  }
-
-  requestTakeoff(): void {
-    console.log(`  [${this.callsign}] Requesting takeoff.`);
-    this.tower.requestTakeoff(this);
-  }
-
-  land(runway: Runway): void {
-    console.log(`  [${this.callsign}] Landing on runway ${runway.id}.`);
-  }
-
-  takeoff(runway: Runway): void {
-    console.log(`  [${this.callsign}] Taking off from runway ${runway.id}.`);
-  }
-
-  holdPosition(): void {
-    console.log(`  [${this.callsign}] Holding position — no runway available.`);
-  }
-}
-
-// --- Colleague: Runway ---
-
-class Runway {
-  public occupied = false;
+class User {
+  public status: "online" | "away" | "offline" = "online";
 
   constructor(
-    public readonly id: string,
-    private tower: AirTrafficControl,
+    public readonly name: string,
+    private chatRoom: ChatMediator,
   ) {}
 
-  reserve(): void {
-    this.occupied = true;
-    console.log(`  [Runway ${this.id}] Now occupied.`);
+  sendMessage(content: string): void {
+    console.log(`[${this.name} -> Room] "${content}"`);
+    this.chatRoom.sendMessage(this, content);
   }
 
-  release(): void {
-    this.occupied = false;
-    console.log(`  [Runway ${this.id}] Now clear.`);
-    this.tower.notifyRunwayClear(this);
+  sendPrivateMessage(toName: string, content: string): void {
+    console.log(`[${this.name} -> ${toName}] "${content}"`);
+    this.chatRoom.sendPrivateMessage(this, toName, content);
+  }
+
+  receiveMessage(from: string, content: string): void {
+    console.log(`  ${this.name} received: [${from}] "${content}"`);
+  }
+
+  receiveNotification(notification: string): void {
+    console.log(`  ${this.name} received notification: "${notification}"`);
+  }
+
+  setStatus(status: "online" | "away" | "offline"): void {
+    this.chatRoom.changeStatus(this, status);
   }
 }
 
-// --- Concrete mediator ---
-// Contains ALL the coordination logic. Planes and runways
-// don't know about each other — only the tower does.
+// --- Concrete mediator: ChatRoom ---
+// Contains ALL the coordination logic. Users never reference each other.
 
-class ControlTower implements AirTrafficControl {
-  private runways: Runway[] = [];
-  private landingQueue: Plane[] = [];
-  private takeoffQueue: Plane[] = [];
+class ChatRoom implements ChatMediator {
+  private users = new Map<string, User>();
+  private messageHistory: { from: string; to: string; content: string }[] = [];
 
-  addRunway(runway: Runway): void {
-    this.runways.push(runway);
-  }
+  registerUser(user: User): void {
+    this.users.set(user.name, user);
+    console.log(`[ChatRoom] ${user.name} joined the room`);
 
-  requestLanding(plane: Plane): void {
-    const runway = this.findFreeRunway();
-    if (runway) {
-      runway.reserve();
-      plane.land(runway);
-      // Simulate: runway is freed after landing
-      runway.release();
-    } else {
-      this.landingQueue.push(plane);
-      plane.holdPosition();
+    // Notify all other online users
+    for (const [name, other] of this.users) {
+      if (name !== user.name && other.status === "online") {
+        other.receiveNotification(`${user.name} joined the room`);
+      }
     }
   }
 
-  requestTakeoff(plane: Plane): void {
-    const runway = this.findFreeRunway();
-    if (runway) {
-      runway.reserve();
-      plane.takeoff(runway);
-      runway.release();
-    } else {
-      this.takeoffQueue.push(plane);
-      plane.holdPosition();
+  sendMessage(from: User, content: string): void {
+    this.messageHistory.push({ from: from.name, to: "Room", content });
+
+    // Deliver to all other online users
+    for (const [name, user] of this.users) {
+      if (name !== from.name && user.status === "online") {
+        user.receiveMessage(from.name, content);
+      }
     }
   }
 
-  notifyRunwayClear(runway: Runway): void {
-    // Landing has priority over takeoff
-    if (this.landingQueue.length > 0) {
-      const plane = this.landingQueue.shift()!;
-      console.log(`  [Tower] Runway ${runway.id} free — assigning to queued ${plane.callsign} for landing.`);
-      runway.reserve();
-      plane.land(runway);
-      runway.release();
-    } else if (this.takeoffQueue.length > 0) {
-      const plane = this.takeoffQueue.shift()!;
-      console.log(`  [Tower] Runway ${runway.id} free — assigning to queued ${plane.callsign} for takeoff.`);
-      runway.reserve();
-      plane.takeoff(runway);
-      runway.release();
+  sendPrivateMessage(from: User, toName: string, content: string): void {
+    const target = this.users.get(toName);
+
+    if (!target) {
+      from.receiveNotification(`User "${toName}" not found`);
+      return;
+    }
+
+    if (target.status === "offline") {
+      from.receiveNotification(`${toName} is currently offline`);
+      return;
+    }
+
+    this.messageHistory.push({ from: from.name, to: toName, content });
+    target.receiveMessage(`DM from ${from.name}`, content);
+  }
+
+  changeStatus(user: User, status: "online" | "away" | "offline"): void {
+    const oldStatus = user.status;
+    user.status = status;
+    console.log(`[${user.name}] Status changed to ${status}`);
+
+    // Notify other online users about relevant status changes
+    if (status === "offline") {
+      for (const [name, other] of this.users) {
+        if (name !== user.name && other.status === "online") {
+          other.receiveNotification(`${user.name} went offline`);
+        }
+      }
+    } else if (status === "online" && oldStatus !== "online") {
+      for (const [name, other] of this.users) {
+        if (name !== user.name && other.status === "online") {
+          other.receiveNotification(`${user.name} came online`);
+        }
+      }
     }
   }
 
-  private findFreeRunway(): Runway | undefined {
-    return this.runways.find((r) => !r.occupied);
+  getMessageHistory(): { from: string; to: string; content: string }[] {
+    return [...this.messageHistory];
   }
 }
 
 // --- Usage ---
-// Planes never reference runways. Runways never reference planes.
-// All coordination goes through the tower.
+// Users never reference each other. All communication goes through the ChatRoom.
 
-const tower = new ControlTower();
+const chatRoom = new ChatRoom();
 
-const runway1 = new Runway("09L", tower);
-tower.addRunway(runway1);
+const alice = new User("Alice", chatRoom);
+const bob = new User("Bob", chatRoom);
 
-const flight1 = new Plane("AA-101", tower);
-const flight2 = new Plane("BA-202", tower);
-const flight3 = new Plane("LH-303", tower);
+chatRoom.registerUser(alice);
+chatRoom.registerUser(bob);
 
-console.log("=== Three planes request landing (one runway) ===");
-flight1.requestLanding();
 console.log();
-flight2.requestLanding();
+alice.sendMessage("Hey everyone!");
+
 console.log();
-flight3.requestLanding();
+bob.sendPrivateMessage("Alice", "Hi Alice, private message");
 
-console.log("\n=== Adding a second runway ===");
-const runway2 = new Runway("27R", tower);
-tower.addRunway(runway2);
+console.log();
+alice.setStatus("offline");
 
-console.log("\n=== Takeoff request with two runways available ===");
-flight1.requestTakeoff();
+console.log();
+bob.sendPrivateMessage("Alice", "Are you there?");
+
+console.log();
+console.log("=== Message History ===");
+for (const msg of chatRoom.getMessageHistory()) {
+  console.log(`  ${msg.from} -> ${msg.to}: "${msg.content}"`);
+}

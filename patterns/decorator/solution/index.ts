@@ -4,129 +4,110 @@
 // adds a layer of behavior while delegating the core work to the wrapped object.
 
 // --- Component interface ---
+// Both base drinks and add-ons share this interface.
 
-interface DataSource {
-  write(data: string): void;
-  read(): string;
+interface Beverage {
+  cost(): number;
+  description(): string;
 }
 
-// --- Concrete component ---
+// --- Concrete components (base drinks) ---
 
-class InMemoryDataSource implements DataSource {
-  private data = "";
-
-  write(data: string): void {
-    this.data = data;
+class Espresso implements Beverage {
+  cost(): number {
+    return 2.0;
   }
 
-  read(): string {
-    return this.data;
-  }
-}
-
-// --- Base decorator ---
-
-class DataSourceDecorator implements DataSource {
-  constructor(protected wrapped: DataSource) {}
-
-  write(data: string): void {
-    this.wrapped.write(data);
-  }
-
-  read(): string {
-    return this.wrapped.read();
+  description(): string {
+    return "Espresso";
   }
 }
 
-// --- Concrete decorators ---
-
-class LoggingDecorator extends DataSourceDecorator {
-  write(data: string): void {
-    console.log(`  [LOG] Writing ${data.length} chars`);
-    super.write(data);
+class HouseBlend implements Beverage {
+  cost(): number {
+    return 1.5;
   }
 
-  read(): string {
-    const result = super.read();
-    console.log(`  [LOG] Reading ${result.length} chars`);
-    return result;
+  description(): string {
+    return "House Blend";
   }
 }
 
-class EncryptionDecorator extends DataSourceDecorator {
-  write(data: string): void {
-    const encrypted = this.encrypt(data);
-    console.log(`  [ENC] Encrypted data`);
-    super.write(encrypted);
+// --- Concrete decorators (add-ons) ---
+// Each add-on wraps a Beverage and enhances its cost and description.
+// No base decorator class needed — each add-on directly implements Beverage.
+
+class Milk implements Beverage {
+  constructor(private beverage: Beverage) {}
+
+  cost(): number {
+    return this.beverage.cost() + 0.5;
   }
 
-  read(): string {
-    const data = super.read();
-    const decrypted = this.decrypt(data);
-    console.log(`  [ENC] Decrypted data`);
-    return decrypted;
-  }
-
-  private encrypt(data: string): string {
-    return Buffer.from(data).toString("base64");
-  }
-
-  private decrypt(data: string): string {
-    return Buffer.from(data, "base64").toString("utf-8");
+  description(): string {
+    return this.beverage.description() + ", Milk";
   }
 }
 
-class CompressionDecorator extends DataSourceDecorator {
-  write(data: string): void {
-    const compressed = this.compress(data);
-    console.log(`  [ZIP] Compressed: ${data.length} → ${compressed.length} chars`);
-    super.write(compressed);
+class Whip implements Beverage {
+  constructor(private beverage: Beverage) {}
+
+  cost(): number {
+    return this.beverage.cost() + 0.7;
   }
 
-  read(): string {
-    const data = super.read();
-    const decompressed = this.decompress(data);
-    console.log(`  [ZIP] Decompressed: ${data.length} → ${decompressed.length} chars`);
-    return decompressed;
+  description(): string {
+    return this.beverage.description() + ", Whip";
+  }
+}
+
+class Caramel implements Beverage {
+  constructor(private beverage: Beverage) {}
+
+  cost(): number {
+    return this.beverage.cost() + 0.6;
   }
 
-  // Simulated compression (doubles every other char removal — just for demo)
-  private compress(data: string): string {
-    return Buffer.from(data, "utf-8").toString("hex");
+  description(): string {
+    return this.beverage.description() + ", Caramel";
+  }
+}
+
+class ExtraShot implements Beverage {
+  constructor(private beverage: Beverage) {}
+
+  cost(): number {
+    return this.beverage.cost() + 0.8;
   }
 
-  private decompress(data: string): string {
-    return Buffer.from(data, "hex").toString("utf-8");
+  description(): string {
+    return this.beverage.description() + ", Extra Shot";
   }
 }
 
 // --- Usage ---
-// Stack decorators in any combination. The client always sees a DataSource.
+// Stack add-ons in any combination. The client always sees a Beverage.
 
-const message = "aaabbbcccdddeeefffggg";
+console.log("=== Simple Espresso ===");
+const simple: Beverage = new Espresso();
+console.log(`  ${simple.description()} — $${simple.cost().toFixed(2)}`);
 
-console.log("=== Plain write & read ===");
-const plain = new InMemoryDataSource();
-plain.write(message);
-console.log(`  Result: ${plain.read()}`);
+console.log("\n=== House Blend with Milk ===");
+let blend: Beverage = new HouseBlend();
+blend = new Milk(blend);
+console.log(`  ${blend.description()} — $${blend.cost().toFixed(2)}`);
 
-console.log("\n=== Logging only ===");
-const logged = new LoggingDecorator(new InMemoryDataSource());
-logged.write(message);
-console.log(`  Result: ${logged.read()}`);
+console.log("\n=== Espresso with double Milk and Caramel ===");
+let fancy: Beverage = new Espresso();
+fancy = new Milk(fancy);
+fancy = new Milk(fancy);
+fancy = new Caramel(fancy);
+console.log(`  ${fancy.description()} — $${fancy.cost().toFixed(2)}`);
 
-console.log("\n=== Logging + Compression ===");
-const loggedAndCompressed = new LoggingDecorator(
-  new CompressionDecorator(new InMemoryDataSource()),
-);
-loggedAndCompressed.write(message);
-console.log(`  Result: ${loggedAndCompressed.read()}`);
-
-console.log("\n=== Logging + Encryption + Compression ===");
-const fullyWrapped = new LoggingDecorator(
-  new EncryptionDecorator(
-    new CompressionDecorator(new InMemoryDataSource()),
-  ),
-);
-fullyWrapped.write(message);
-console.log(`  Result: ${fullyWrapped.read()}`);
+console.log("\n=== House Blend with everything ===");
+let loaded: Beverage = new HouseBlend();
+loaded = new Milk(loaded);
+loaded = new Whip(loaded);
+loaded = new Caramel(loaded);
+loaded = new ExtraShot(loaded);
+console.log(`  ${loaded.description()} — $${loaded.cost().toFixed(2)}`);

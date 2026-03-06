@@ -2,132 +2,201 @@
 // Defines a family of interchangeable algorithms. The client picks
 // which one to use at runtime without changing the context.
 
-// Example: a shipping cost calculator where the pricing algorithm
-// varies by delivery method.
+// Example: a text storage service where the compression algorithm
+// varies by content type and can be swapped at runtime.
 
 // --- Strategy interface ---
 
-interface ShippingStrategy {
-  calculate(weight: number, distance: number): number;
-  getName(): string;
+interface CompressionStrategy {
+  compress(input: string): string;
+  decompress(compressed: string): string;
+  name(): string;
 }
 
 // --- Concrete strategies ---
 
-class StandardShipping implements ShippingStrategy {
-  getName(): string { return "Standard (5-7 days)"; }
+class RunLengthEncoding implements CompressionStrategy {
+  name(): string { return "RunLengthEncoding"; }
 
-  calculate(weight: number, distance: number): number {
-    return weight * 0.5 + distance * 0.01;
+  compress(input: string): string {
+    if (input.length === 0) return "";
+
+    let result = "";
+    let count = 1;
+
+    for (let i = 1; i <= input.length; i++) {
+      if (i < input.length && input[i] === input[i - 1]) {
+        count++;
+      } else {
+        result += `${count}${input[i - 1]}`;
+        count = 1;
+      }
+    }
+
+    return result;
+  }
+
+  decompress(compressed: string): string {
+    let result = "";
+    let i = 0;
+
+    while (i < compressed.length) {
+      // Parse the count (may be multiple digits)
+      let numStr = "";
+      while (i < compressed.length && compressed[i] >= "0" && compressed[i] <= "9") {
+        numStr += compressed[i];
+        i++;
+      }
+      const count = parseInt(numStr, 10);
+      const char = compressed[i];
+      result += char.repeat(count);
+      i++;
+    }
+
+    return result;
   }
 }
 
-class ExpressShipping implements ShippingStrategy {
-  getName(): string { return "Express (2-3 days)"; }
+class DictionaryCompression implements CompressionStrategy {
+  // Common English words mapped to short tokens
+  private dictionary: Map<string, string> = new Map([
+    ["the", "$1"],
+    ["quick", "$2"],
+    ["brown", "$3"],
+    ["fox", "$4"],
+    ["jumps", "$5"],
+    ["over", "$6"],
+    ["lazy", "$7"],
+    ["dog", "$8"],
+    ["and", "$9"],
+    ["is", "$10"],
+    ["a", "$11"],
+    ["that", "$12"],
+    ["it", "$13"],
+    ["for", "$14"],
+    ["was", "$15"],
+  ]);
 
-  calculate(weight: number, distance: number): number {
-    return weight * 1.2 + distance * 0.03 + 5.00; // flat surcharge
+  // Reverse dictionary for decompression
+  private reverseDictionary: Map<string, string>;
+
+  constructor() {
+    this.reverseDictionary = new Map();
+    for (const [word, token] of this.dictionary) {
+      this.reverseDictionary.set(token, word);
+    }
+  }
+
+  name(): string { return "DictionaryCompression"; }
+
+  compress(input: string): string {
+    let result = input;
+    for (const [word, token] of this.dictionary) {
+      result = result.split(word).join(token);
+    }
+    return result;
+  }
+
+  decompress(compressed: string): string {
+    let result = compressed;
+    // Replace tokens back to words (process longer tokens first to avoid partial matches)
+    const sortedTokens = [...this.reverseDictionary.entries()].sort(
+      (a, b) => b[0].length - a[0].length,
+    );
+    for (const [token, word] of sortedTokens) {
+      result = result.split(token).join(word);
+    }
+    return result;
   }
 }
 
-class OvernightShipping implements ShippingStrategy {
-  getName(): string { return "Overnight (next day)"; }
+class NoCompression implements CompressionStrategy {
+  name(): string { return "NoCompression"; }
 
-  calculate(weight: number, distance: number): number {
-    return weight * 2.0 + distance * 0.05 + 15.00;
+  compress(input: string): string {
+    return input;
   }
-}
 
-class FreeShipping implements ShippingStrategy {
-  getName(): string { return "Free Shipping (promo)"; }
-
-  calculate(): number {
-    return 0;
+  decompress(compressed: string): string {
+    return compressed;
   }
 }
 
 // --- Context ---
 
-class ShippingCalculator {
-  private strategy: ShippingStrategy;
+class StorageService {
+  private strategy: CompressionStrategy;
+  private store_: Map<string, { compressed: string; originalSize: number }> = new Map();
 
-  constructor(strategy: ShippingStrategy) {
+  constructor(strategy: CompressionStrategy) {
     this.strategy = strategy;
   }
 
-  setStrategy(strategy: ShippingStrategy): void {
+  setCompression(strategy: CompressionStrategy): void {
     this.strategy = strategy;
+    console.log(`  Switched compression to: ${strategy.name()}`);
   }
 
-  calculateCost(weight: number, distance: number): number {
-    return this.strategy.calculate(weight, distance);
+  store(key: string, data: string): void {
+    const compressed = this.strategy.compress(data);
+    this.store_.set(key, { compressed, originalSize: data.length });
+
+    const ratio = data.length > 0
+      ? Math.round((1 - compressed.length / data.length) * 100)
+      : 0;
+
+    console.log(`  Stored "${key}" (original: ${data.length} chars, compressed: ${compressed.length} chars, ratio: ${ratio}%)`);
   }
 
-  display(weight: number, distance: number): void {
-    const cost = this.calculateCost(weight, distance);
-    console.log(`  ${this.strategy.getName()}: $${cost.toFixed(2)}`);
+  retrieve(key: string): string {
+    const entry = this.store_.get(key);
+    if (!entry) {
+      throw new Error(`Key "${key}" not found`);
+    }
+    return this.strategy.decompress(entry.compressed);
+  }
+
+  getStats(key: string): void {
+    const entry = this.store_.get(key);
+    if (!entry) {
+      console.log(`  No data stored for "${key}"`);
+      return;
+    }
+
+    const ratio = entry.originalSize > 0
+      ? Math.round((1 - entry.compressed.length / entry.originalSize) * 100)
+      : 0;
+
+    console.log(`  "${key}" — original: ${entry.originalSize} chars, compressed: ${entry.compressed.length} chars, ratio: ${ratio}%`);
   }
 }
 
 // --- Usage ---
-// Same calculator, same package — different strategies produce different costs.
+// Same storage service, different compression strategies produce different results.
 
-const weight = 3.5;   // kg
-const distance = 500;  // km
+const storage = new StorageService(new RunLengthEncoding());
 
-console.log(`=== Package: ${weight}kg, ${distance}km ===\n`);
+console.log("=== RunLengthEncoding ===");
+const binaryData = "aaaaabbbbccccccccdddd";
+storage.store("binary", binaryData);
+const retrieved1 = storage.retrieve("binary");
+console.log(`  Retrieved: "${retrieved1}" ${retrieved1 === binaryData ? "\u2713" : "\u2717"}`);
 
-const calculator = new ShippingCalculator(new StandardShipping());
-calculator.display(weight, distance);
+console.log("\n=== DictionaryCompression ===");
+storage.setCompression(new DictionaryCompression());
+const essay = "the quick brown fox jumps over the lazy dog";
+storage.store("essay", essay);
+const retrieved2 = storage.retrieve("essay");
+console.log(`  Retrieved: "${retrieved2}" ${retrieved2 === essay ? "\u2713" : "\u2717"}`);
 
-calculator.setStrategy(new ExpressShipping());
-calculator.display(weight, distance);
+console.log("\n=== NoCompression ===");
+storage.setCompression(new NoCompression());
+const config = "debug=true;level=5";
+storage.store("config", config);
+const retrieved3 = storage.retrieve("config");
+console.log(`  Retrieved: "${retrieved3}" ${retrieved3 === config ? "\u2713" : "\u2717"}`);
 
-calculator.setStrategy(new OvernightShipping());
-calculator.display(weight, distance);
-
-calculator.setStrategy(new FreeShipping());
-calculator.display(weight, distance);
-
-// --- Real-world scenario: strategy chosen based on business rules ---
-
-console.log("\n=== Cart-based strategy selection ===\n");
-
-interface CartItem {
-  name: string;
-  price: number;
-  weight: number;
-}
-
-function selectShippingStrategy(cart: CartItem[], isPremiumMember: boolean): ShippingStrategy {
-  const total = cart.reduce((sum, item) => sum + item.price, 0);
-
-  if (isPremiumMember) {
-    return new FreeShipping();
-  }
-  if (total > 100) {
-    return new ExpressShipping(); // free upgrade for big orders
-  }
-  return new StandardShipping();
-}
-
-const cart: CartItem[] = [
-  { name: "Laptop Stand", price: 45.00, weight: 1.2 },
-  { name: "Mechanical Keyboard", price: 89.00, weight: 0.8 },
-];
-const totalWeight = cart.reduce((sum, item) => sum + item.weight, 0);
-const cartTotal = cart.reduce((sum, item) => sum + item.price, 0);
-
-console.log(`  Cart total: $${cartTotal.toFixed(2)}, Weight: ${totalWeight}kg`);
-
-// Regular customer with $134 cart → express upgrade
-const regularStrategy = selectShippingStrategy(cart, false);
-calculator.setStrategy(regularStrategy);
-console.log(`  Regular customer:`);
-calculator.display(totalWeight, 300);
-
-// Premium member → free shipping
-const premiumStrategy = selectShippingStrategy(cart, true);
-calculator.setStrategy(premiumStrategy);
-console.log(`  Premium member:`);
-calculator.display(totalWeight, 300);
+console.log("\n=== Stats ===");
+storage.getStats("binary");
+storage.getStats("essay");
+storage.getStats("config");

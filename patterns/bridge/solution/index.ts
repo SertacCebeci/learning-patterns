@@ -3,62 +3,95 @@
 // that can vary independently. Prevents class explosion when you have
 // multiple dimensions of variation.
 
-// Without Bridge you'd need: NormalEmail, NormalSlack, UrgentEmail, UrgentSlack...
-// With Bridge: Notification × Channel — two small hierarchies instead of one big one.
+// Without Bridge you'd need: SVGCircle, SVGRectangle, SVGTriangle,
+// CanvasCircle, CanvasRectangle, CanvasTriangle — 6 classes (N x M).
+// With Bridge: 3 shapes + 2 renderers = 5 classes (N + M).
 
-// --- Implementation hierarchy (the "how") ---
+// --- Implementation hierarchy (Renderers) ---
 
-interface MessageChannel {
-  sendMessage(title: string, body: string): void;
+interface Renderer {
+  renderCircle(radius: number): string;
+  renderRectangle(width: number, height: number): string;
+  renderTriangle(base: number, height: number): string;
 }
 
-class EmailChannel implements MessageChannel {
-  constructor(private address: string) {}
+class SVGRenderer implements Renderer {
+  renderCircle(radius: number): string {
+    return `<circle r="${radius}" />`;
+  }
 
-  sendMessage(title: string, body: string): void {
-    console.log(`  [Email → ${this.address}] ${title}: ${body}`);
+  renderRectangle(width: number, height: number): string {
+    return `<rect width="${width}" height="${height}" />`;
+  }
+
+  renderTriangle(base: number, height: number): string {
+    return `<polygon points="0,${height} ${base / 2},0 ${base},${height}" />`;
   }
 }
 
-class SlackChannel implements MessageChannel {
-  constructor(private webhook: string) {}
+class CanvasRenderer implements Renderer {
+  renderCircle(radius: number): string {
+    return `ctx.arc(0, 0, ${radius}, 0, Math.PI * 2)`;
+  }
 
-  sendMessage(title: string, body: string): void {
-    console.log(`  [Slack → ${this.webhook}] ${title}: ${body}`);
+  renderRectangle(width: number, height: number): string {
+    return `ctx.fillRect(0, 0, ${width}, ${height})`;
+  }
+
+  renderTriangle(base: number, height: number): string {
+    return `ctx.moveTo(0, ${height}); ctx.lineTo(${base / 2}, 0); ctx.lineTo(${base}, ${height}); ctx.closePath()`;
   }
 }
 
-// --- Abstraction hierarchy (the "what") ---
+// --- Abstraction hierarchy (Shapes) ---
 
-class Notification {
-  constructor(protected channel: MessageChannel) {}
+abstract class Shape {
+  constructor(protected renderer: Renderer) {}
+  abstract render(): string;
+}
 
-  send(message: string): void {
-    this.channel.sendMessage("Notice", message);
+class Circle extends Shape {
+  constructor(private radius: number, renderer: Renderer) {
+    super(renderer);
+  }
+
+  render(): string {
+    return this.renderer.renderCircle(this.radius);
   }
 }
 
-class UrgentNotification extends Notification {
-  send(message: string): void {
-    this.channel.sendMessage("URGENT", message.toUpperCase());
-    this.channel.sendMessage("URGENT (follow-up)", "Please respond immediately.");
+class Rectangle extends Shape {
+  constructor(private width: number, private height: number, renderer: Renderer) {
+    super(renderer);
+  }
+
+  render(): string {
+    return this.renderer.renderRectangle(this.width, this.height);
+  }
+}
+
+class Triangle extends Shape {
+  constructor(private base: number, private height: number, renderer: Renderer) {
+    super(renderer);
+  }
+
+  render(): string {
+    return this.renderer.renderTriangle(this.base, this.height);
   }
 }
 
 // --- Usage ---
-// Mix and match any notification type with any channel.
+// Mix and match any shape with any renderer.
 
-const email = new EmailChannel("dev@company.com");
-const slack = new SlackChannel("#alerts");
+const svgRenderer = new SVGRenderer();
+const canvasRenderer = new CanvasRenderer();
 
-console.log("=== Normal via Email ===");
-new Notification(email).send("Deployment completed successfully.");
+console.log("=== SVG Renderer ===");
+console.log(new Circle(10, svgRenderer).render());
+console.log(new Rectangle(20, 15, svgRenderer).render());
+console.log(new Triangle(30, 20, svgRenderer).render());
 
-console.log("\n=== Normal via Slack ===");
-new Notification(slack).send("Deployment completed successfully.");
-
-console.log("\n=== Urgent via Email ===");
-new UrgentNotification(email).send("Database is down!");
-
-console.log("\n=== Urgent via Slack ===");
-new UrgentNotification(slack).send("Database is down!");
+console.log("\n=== Canvas Renderer ===");
+console.log(new Circle(10, canvasRenderer).render());
+console.log(new Rectangle(20, 15, canvasRenderer).render());
+console.log(new Triangle(30, 20, canvasRenderer).render());
