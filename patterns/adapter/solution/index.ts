@@ -13,20 +13,34 @@ interface WeatherProvider {
 // --- A third-party weather SDK with a completely different API ---
 
 class OpenMeteoSDK {
-  fetchWeatherData(params: { location: string; units: "metric" | "imperial" }): {
+  fetchWeatherData(params: {
+    location: string;
+    units: 'metric' | 'imperial';
+  }): {
     temp_c: number;
     humidity_pct: number;
   } {
     // Simulated weather data based on location
-    console.log(`  [OpenMeteoSDK] Fetching weather for "${params.location}" (${params.units})`);
+    console.log(
+      `  [OpenMeteoSDK] Fetching weather for "${params.location}" (${params.units})`,
+    );
     return { temp_c: 22, humidity_pct: 65 };
   }
 
-  fetchForecastData(params: { location: string; num_days: number; units: "metric" | "imperial" }): {
+  fetchForecastData(params: {
+    location: string;
+    num_days: number;
+    units: 'metric' | 'imperial';
+  }): {
     daily_summaries: string[];
   } {
-    console.log(`  [OpenMeteoSDK] Fetching ${params.num_days}-day forecast for "${params.location}"`);
-    const summaries = Array.from({ length: params.num_days }, (_, i) => `Day ${i + 1}: Partly cloudy`);
+    console.log(
+      `  [OpenMeteoSDK] Fetching ${params.num_days}-day forecast for "${params.location}"`,
+    );
+    const summaries = Array.from(
+      { length: params.num_days },
+      (_, i) => `Day ${i + 1}: Partly cloudy`,
+    );
     return { daily_summaries: summaries };
   }
 }
@@ -44,18 +58,18 @@ class OpenMeteoAdapter implements WeatherProvider {
   // Convert city name to the format expected by the SDK:
   // "New York" -> "new_york"
   private formatLocation(city: string): string {
-    return city.toLowerCase().replace(/\s+/g, "_");
+    return city.toLowerCase().replace(/\s+/g, '_');
   }
 
   // Convert Celsius to Fahrenheit: F = C * 9/5 + 32
   private celsiusToFahrenheit(celsius: number): number {
-    return celsius * 9 / 5 + 32;
+    return (celsius * 9) / 5 + 32;
   }
 
   getCurrentTemperature(city: string): number {
     const data = this.sdk.fetchWeatherData({
       location: this.formatLocation(city),
-      units: "metric",
+      units: 'metric',
     });
     return this.celsiusToFahrenheit(data.temp_c);
   }
@@ -63,7 +77,7 @@ class OpenMeteoAdapter implements WeatherProvider {
   getHumidity(city: string): number {
     const data = this.sdk.fetchWeatherData({
       location: this.formatLocation(city),
-      units: "metric",
+      units: 'metric',
     });
     return data.humidity_pct;
   }
@@ -72,7 +86,7 @@ class OpenMeteoAdapter implements WeatherProvider {
     const data = this.sdk.fetchForecastData({
       location: this.formatLocation(city),
       num_days: days,
-      units: "metric",
+      units: 'metric',
     });
     return data.daily_summaries;
   }
@@ -83,7 +97,7 @@ class OpenMeteoAdapter implements WeatherProvider {
 
 function showDashboard(provider: WeatherProvider, city: string): void {
   console.log(`\nWeather Dashboard for ${city}`);
-  console.log("─".repeat(35));
+  console.log('─'.repeat(35));
 
   const temp = provider.getCurrentTemperature(city);
   console.log(`  Temperature: ${temp}°F`);
@@ -99,5 +113,5 @@ function showDashboard(provider: WeatherProvider, city: string): void {
 const sdk = new OpenMeteoSDK();
 const provider = new OpenMeteoAdapter(sdk);
 
-showDashboard(provider, "New York");
-showDashboard(provider, "San Francisco");
+showDashboard(provider, 'New York');
+showDashboard(provider, 'San Francisco');

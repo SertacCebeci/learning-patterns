@@ -31,7 +31,11 @@ class WeatherStation {
     this.displays.delete(display);
   }
 
-  setMeasurements(temperature: number, humidity: number, pressure: number): void {
+  setMeasurements(
+    temperature: number,
+    humidity: number,
+    pressure: number,
+  ): void {
     this.temperature = temperature;
     this.humidity = humidity;
     this.pressure = pressure;
@@ -59,7 +63,9 @@ class CurrentConditionsDisplay implements WeatherDisplay {
   }
 
   display(): void {
-    console.log(`Current: ${this.temperature}C, ${this.humidity.toFixed(1)}% humidity`);
+    console.log(
+      `Current: ${this.temperature}C, ${this.humidity.toFixed(1)}% humidity`,
+    );
   }
 }
 
@@ -74,8 +80,12 @@ class StatisticsDisplay implements WeatherDisplay {
   display(): void {
     const min = Math.min(...this.temperatures);
     const max = Math.max(...this.temperatures);
-    const avg = this.temperatures.reduce((sum, t) => sum + t, 0) / this.temperatures.length;
-    console.log(`Stats: Avg/Max/Min = ${parseFloat(avg.toFixed(1))}/${max}/${min}`);
+    const avg =
+      this.temperatures.reduce((sum, t) => sum + t, 0) /
+      this.temperatures.length;
+    console.log(
+      `Stats: Avg/Max/Min = ${parseFloat(avg.toFixed(1))}/${max}/${min}`,
+    );
   }
 }
 
@@ -98,11 +108,11 @@ class ForecastDisplay implements WeatherDisplay {
 
   display(): void {
     if (this.currentPressure > this.lastPressure) {
-      console.log("Forecast: Improving weather ahead");
+      console.log('Forecast: Improving weather ahead');
     } else if (this.currentPressure < this.lastPressure) {
-      console.log("Forecast: Cooler, rainy weather ahead");
+      console.log('Forecast: Cooler, rainy weather ahead');
     } else {
-      console.log("Forecast: More of the same");
+      console.log('Forecast: More of the same');
     }
   }
 }
@@ -121,18 +131,18 @@ station.registerDisplay(currentDisplay);
 station.registerDisplay(statsDisplay);
 station.registerDisplay(forecastDisplay);
 
-console.log("=== Reading 1: 26.5C, 65%, 1013.1hPa ===");
+console.log('=== Reading 1: 26.5C, 65%, 1013.1hPa ===');
 station.setMeasurements(26.5, 65, 1013.1);
 
-console.log("\n=== Reading 2: 28.2C, 70%, 1012.5hPa ===");
+console.log('\n=== Reading 2: 28.2C, 70%, 1012.5hPa ===');
 station.setMeasurements(28.2, 70, 1012.5);
 
-console.log("\n=== Reading 3: 24.1C, 90%, 1009.2hPa ===");
+console.log('\n=== Reading 3: 24.1C, 90%, 1009.2hPa ===');
 station.setMeasurements(24.1, 90, 1009.2);
 
-console.log("\n=== Removed StatisticsDisplay ===");
+console.log('\n=== Removed StatisticsDisplay ===');
 station.removeDisplay(statsDisplay);
 
-console.log("\n=== Reading 4: 22.0C, 85%, 1007.8hPa ===");
+console.log('\n=== Reading 4: 22.0C, 85%, 1007.8hPa ===');
 station.setMeasurements(22.0, 85, 1007.8);
-console.log("(No stats displayed — that display was removed)");
+console.log('(No stats displayed — that display was removed)');

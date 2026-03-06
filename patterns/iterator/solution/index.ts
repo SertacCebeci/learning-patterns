@@ -159,14 +159,16 @@ class GenrePlaylist {
 function formatDuration(seconds: number): string {
   const min = Math.floor(seconds / 60);
   const sec = seconds % 60;
-  return `${min}:${sec.toString().padStart(2, "0")}`;
+  return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
 function printAllSongs(iterator: SongIterator): void {
   let count = 1;
   while (iterator.hasNext()) {
     const song = iterator.next();
-    console.log(`  ${count}. "${song.title}" by ${song.artist} (${formatDuration(song.duration)})`);
+    console.log(
+      `  ${count}. "${song.title}" by ${song.artist} (${formatDuration(song.duration)})`,
+    );
     count++;
   }
 }
@@ -174,35 +176,105 @@ function printAllSongs(iterator: SongIterator): void {
 // --- Usage ---
 
 // Favorites playlist
-console.log("=== Favorites ===");
+console.log('=== Favorites ===');
 const favorites = new FavoritesPlaylist();
-favorites.addSong({ title: "Bohemian Rhapsody", artist: "Queen", duration: 355, genre: "Rock" });
-favorites.addSong({ title: "Hotel California", artist: "Eagles", duration: 390, genre: "Rock" });
-favorites.addSong({ title: "Stairway to Heaven", artist: "Led Zeppelin", duration: 482, genre: "Rock" });
+favorites.addSong({
+  title: 'Bohemian Rhapsody',
+  artist: 'Queen',
+  duration: 355,
+  genre: 'Rock',
+});
+favorites.addSong({
+  title: 'Hotel California',
+  artist: 'Eagles',
+  duration: 390,
+  genre: 'Rock',
+});
+favorites.addSong({
+  title: 'Stairway to Heaven',
+  artist: 'Led Zeppelin',
+  duration: 482,
+  genre: 'Rock',
+});
 printAllSongs(favorites.createIterator());
 
 // Recently played playlist (circular buffer with 5 slots)
-console.log("\n=== Recently Played (circular buffer with 5 slots) ===");
+console.log('\n=== Recently Played (circular buffer with 5 slots) ===');
 const recent = new RecentlyPlayedPlaylist(5);
-recent.addSong({ title: "Song A", artist: "Artist1", duration: 200, genre: "Pop" });
-recent.addSong({ title: "Song B", artist: "Artist2", duration: 210, genre: "Pop" });
-recent.addSong({ title: "Song C", artist: "Artist3", duration: 220, genre: "Pop" });
-recent.addSong({ title: "Song D", artist: "Artist4", duration: 230, genre: "Pop" });
-recent.addSong({ title: "Song E", artist: "Artist5", duration: 240, genre: "Pop" });
+recent.addSong({
+  title: 'Song A',
+  artist: 'Artist1',
+  duration: 200,
+  genre: 'Pop',
+});
+recent.addSong({
+  title: 'Song B',
+  artist: 'Artist2',
+  duration: 210,
+  genre: 'Pop',
+});
+recent.addSong({
+  title: 'Song C',
+  artist: 'Artist3',
+  duration: 220,
+  genre: 'Pop',
+});
+recent.addSong({
+  title: 'Song D',
+  artist: 'Artist4',
+  duration: 230,
+  genre: 'Pop',
+});
+recent.addSong({
+  title: 'Song E',
+  artist: 'Artist5',
+  duration: 240,
+  genre: 'Pop',
+});
 // This overwrites Song A (oldest entry)
-recent.addSong({ title: "Song F", artist: "Artist6", duration: 250, genre: "Pop" });
+recent.addSong({
+  title: 'Song F',
+  artist: 'Artist6',
+  duration: 250,
+  genre: 'Pop',
+});
 printAllSongs(recent.createIterator());
 
 // Genre playlist — by genre traversal
-console.log("\n=== Genre Playlist (by genre) ===");
+console.log('\n=== Genre Playlist (by genre) ===');
 const genrePlaylist = new GenrePlaylist();
-genrePlaylist.addSong({ title: "Bohemian Rhapsody", artist: "Queen", duration: 355, genre: "Rock" });
-genrePlaylist.addSong({ title: "Hotel California", artist: "Eagles", duration: 390, genre: "Rock" });
-genrePlaylist.addSong({ title: "Take Five", artist: "Dave Brubeck", duration: 324, genre: "Jazz" });
-genrePlaylist.addSong({ title: "So What", artist: "Miles Davis", duration: 562, genre: "Jazz" });
-genrePlaylist.addSong({ title: "Blinding Lights", artist: "The Weeknd", duration: 200, genre: "Pop" });
+genrePlaylist.addSong({
+  title: 'Bohemian Rhapsody',
+  artist: 'Queen',
+  duration: 355,
+  genre: 'Rock',
+});
+genrePlaylist.addSong({
+  title: 'Hotel California',
+  artist: 'Eagles',
+  duration: 390,
+  genre: 'Rock',
+});
+genrePlaylist.addSong({
+  title: 'Take Five',
+  artist: 'Dave Brubeck',
+  duration: 324,
+  genre: 'Jazz',
+});
+genrePlaylist.addSong({
+  title: 'So What',
+  artist: 'Miles Davis',
+  duration: 562,
+  genre: 'Jazz',
+});
+genrePlaylist.addSong({
+  title: 'Blinding Lights',
+  artist: 'The Weeknd',
+  duration: 200,
+  genre: 'Pop',
+});
 printAllSongs(genrePlaylist.createByGenreIterator());
 
 // Genre playlist — alphabetical traversal
-console.log("\n=== Genre Playlist (alphabetical) ===");
+console.log('\n=== Genre Playlist (alphabetical) ===');
 printAllSongs(genrePlaylist.createAlphabeticalIterator());

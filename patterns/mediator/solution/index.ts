@@ -12,14 +12,14 @@ interface ChatMediator {
   registerUser(user: User): void;
   sendMessage(from: User, content: string): void;
   sendPrivateMessage(from: User, toName: string, content: string): void;
-  changeStatus(user: User, status: "online" | "away" | "offline"): void;
+  changeStatus(user: User, status: 'online' | 'away' | 'offline'): void;
 }
 
 // --- Colleague: User ---
 // Users only know about the mediator, never about other users.
 
 class User {
-  public status: "online" | "away" | "offline" = "online";
+  public status: 'online' | 'away' | 'offline' = 'online';
 
   constructor(
     public readonly name: string,
@@ -44,7 +44,7 @@ class User {
     console.log(`  ${this.name} received notification: "${notification}"`);
   }
 
-  setStatus(status: "online" | "away" | "offline"): void {
+  setStatus(status: 'online' | 'away' | 'offline'): void {
     this.chatRoom.changeStatus(this, status);
   }
 }
@@ -62,18 +62,18 @@ class ChatRoom implements ChatMediator {
 
     // Notify all other online users
     for (const [name, other] of this.users) {
-      if (name !== user.name && other.status === "online") {
+      if (name !== user.name && other.status === 'online') {
         other.receiveNotification(`${user.name} joined the room`);
       }
     }
   }
 
   sendMessage(from: User, content: string): void {
-    this.messageHistory.push({ from: from.name, to: "Room", content });
+    this.messageHistory.push({ from: from.name, to: 'Room', content });
 
     // Deliver to all other online users
     for (const [name, user] of this.users) {
-      if (name !== from.name && user.status === "online") {
+      if (name !== from.name && user.status === 'online') {
         user.receiveMessage(from.name, content);
       }
     }
@@ -87,7 +87,7 @@ class ChatRoom implements ChatMediator {
       return;
     }
 
-    if (target.status === "offline") {
+    if (target.status === 'offline') {
       from.receiveNotification(`${toName} is currently offline`);
       return;
     }
@@ -96,21 +96,21 @@ class ChatRoom implements ChatMediator {
     target.receiveMessage(`DM from ${from.name}`, content);
   }
 
-  changeStatus(user: User, status: "online" | "away" | "offline"): void {
+  changeStatus(user: User, status: 'online' | 'away' | 'offline'): void {
     const oldStatus = user.status;
     user.status = status;
     console.log(`[${user.name}] Status changed to ${status}`);
 
     // Notify other online users about relevant status changes
-    if (status === "offline") {
+    if (status === 'offline') {
       for (const [name, other] of this.users) {
-        if (name !== user.name && other.status === "online") {
+        if (name !== user.name && other.status === 'online') {
           other.receiveNotification(`${user.name} went offline`);
         }
       }
-    } else if (status === "online" && oldStatus !== "online") {
+    } else if (status === 'online' && oldStatus !== 'online') {
       for (const [name, other] of this.users) {
-        if (name !== user.name && other.status === "online") {
+        if (name !== user.name && other.status === 'online') {
           other.receiveNotification(`${user.name} came online`);
         }
       }
@@ -127,26 +127,26 @@ class ChatRoom implements ChatMediator {
 
 const chatRoom = new ChatRoom();
 
-const alice = new User("Alice", chatRoom);
-const bob = new User("Bob", chatRoom);
+const alice = new User('Alice', chatRoom);
+const bob = new User('Bob', chatRoom);
 
 chatRoom.registerUser(alice);
 chatRoom.registerUser(bob);
 
 console.log();
-alice.sendMessage("Hey everyone!");
+alice.sendMessage('Hey everyone!');
 
 console.log();
-bob.sendPrivateMessage("Alice", "Hi Alice, private message");
+bob.sendPrivateMessage('Alice', 'Hi Alice, private message');
 
 console.log();
-alice.setStatus("offline");
+alice.setStatus('offline');
 
 console.log();
-bob.sendPrivateMessage("Alice", "Are you there?");
+bob.sendPrivateMessage('Alice', 'Are you there?');
 
 console.log();
-console.log("=== Message History ===");
+console.log('=== Message History ===');
 for (const msg of chatRoom.getMessageHistory()) {
   console.log(`  ${msg.from} -> ${msg.to}: "${msg.content}"`);
 }

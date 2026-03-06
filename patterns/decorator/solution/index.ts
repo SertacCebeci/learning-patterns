@@ -19,7 +19,7 @@ class Espresso implements Beverage {
   }
 
   description(): string {
-    return "Espresso";
+    return 'Espresso';
   }
 }
 
@@ -29,7 +29,7 @@ class HouseBlend implements Beverage {
   }
 
   description(): string {
-    return "House Blend";
+    return 'House Blend';
   }
 }
 
@@ -45,7 +45,7 @@ class Milk implements Beverage {
   }
 
   description(): string {
-    return this.beverage.description() + ", Milk";
+    return this.beverage.description() + ', Milk';
   }
 }
 
@@ -57,7 +57,7 @@ class Whip implements Beverage {
   }
 
   description(): string {
-    return this.beverage.description() + ", Whip";
+    return this.beverage.description() + ', Whip';
   }
 }
 
@@ -69,7 +69,7 @@ class Caramel implements Beverage {
   }
 
   description(): string {
-    return this.beverage.description() + ", Caramel";
+    return this.beverage.description() + ', Caramel';
   }
 }
 
@@ -81,30 +81,30 @@ class ExtraShot implements Beverage {
   }
 
   description(): string {
-    return this.beverage.description() + ", Extra Shot";
+    return this.beverage.description() + ', Extra Shot';
   }
 }
 
 // --- Usage ---
 // Stack add-ons in any combination. The client always sees a Beverage.
 
-console.log("=== Simple Espresso ===");
+console.log('=== Simple Espresso ===');
 const simple: Beverage = new Espresso();
 console.log(`  ${simple.description()} — $${simple.cost().toFixed(2)}`);
 
-console.log("\n=== House Blend with Milk ===");
+console.log('\n=== House Blend with Milk ===');
 let blend: Beverage = new HouseBlend();
 blend = new Milk(blend);
 console.log(`  ${blend.description()} — $${blend.cost().toFixed(2)}`);
 
-console.log("\n=== Espresso with double Milk and Caramel ===");
+console.log('\n=== Espresso with double Milk and Caramel ===');
 let fancy: Beverage = new Espresso();
 fancy = new Milk(fancy);
 fancy = new Milk(fancy);
 fancy = new Caramel(fancy);
 console.log(`  ${fancy.description()} — $${fancy.cost().toFixed(2)}`);
 
-console.log("\n=== House Blend with everything ===");
+console.log('\n=== House Blend with everything ===');
 let loaded: Beverage = new HouseBlend();
 loaded = new Milk(loaded);
 loaded = new Whip(loaded);

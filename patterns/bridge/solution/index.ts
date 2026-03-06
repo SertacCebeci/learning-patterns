@@ -51,7 +51,10 @@ abstract class Shape {
 }
 
 class Circle extends Shape {
-  constructor(private radius: number, renderer: Renderer) {
+  constructor(
+    private radius: number,
+    renderer: Renderer,
+  ) {
     super(renderer);
   }
 
@@ -61,7 +64,11 @@ class Circle extends Shape {
 }
 
 class Rectangle extends Shape {
-  constructor(private width: number, private height: number, renderer: Renderer) {
+  constructor(
+    private width: number,
+    private height: number,
+    renderer: Renderer,
+  ) {
     super(renderer);
   }
 
@@ -71,7 +78,11 @@ class Rectangle extends Shape {
 }
 
 class Triangle extends Shape {
-  constructor(private base: number, private height: number, renderer: Renderer) {
+  constructor(
+    private base: number,
+    private height: number,
+    renderer: Renderer,
+  ) {
     super(renderer);
   }
 
@@ -86,12 +97,12 @@ class Triangle extends Shape {
 const svgRenderer = new SVGRenderer();
 const canvasRenderer = new CanvasRenderer();
 
-console.log("=== SVG Renderer ===");
+console.log('=== SVG Renderer ===');
 console.log(new Circle(10, svgRenderer).render());
 console.log(new Rectangle(20, 15, svgRenderer).render());
 console.log(new Triangle(30, 20, svgRenderer).render());
 
-console.log("\n=== Canvas Renderer ===");
+console.log('\n=== Canvas Renderer ===');
 console.log(new Circle(10, canvasRenderer).render());
 console.log(new Rectangle(20, 15, canvasRenderer).render());
 console.log(new Triangle(30, 20, canvasRenderer).render());

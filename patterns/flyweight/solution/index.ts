@@ -23,12 +23,18 @@ class CharacterStyle {
 class CharacterStyleFactory {
   private styles = new Map<string, CharacterStyle>();
 
-  getStyle(fontFamily: string, fontSize: number, color: string): CharacterStyle {
+  getStyle(
+    fontFamily: string,
+    fontSize: number,
+    color: string,
+  ): CharacterStyle {
     const key = `${fontFamily}_${fontSize}_${color}`;
 
     if (!this.styles.has(key)) {
       this.styles.set(key, new CharacterStyle(fontFamily, fontSize, color));
-      console.log(`  [Factory] Created new style: ${fontFamily} ${fontSize}px ${color}`);
+      console.log(
+        `  [Factory] Created new style: ${fontFamily} ${fontSize}px ${color}`,
+      );
     }
 
     return this.styles.get(key)!;
@@ -63,7 +69,14 @@ class Document {
   private characters: Character[] = [];
   private factory = new CharacterStyleFactory();
 
-  addCharacter(row: number, col: number, char: string, fontFamily: string, fontSize: number, color: string): void {
+  addCharacter(
+    row: number,
+    col: number,
+    char: string,
+    fontFamily: string,
+    fontSize: number,
+    color: string,
+  ): void {
     const style = this.factory.getStyle(fontFamily, fontSize, color);
     this.characters.push(new Character(row, col, char, style));
   }
@@ -87,27 +100,27 @@ class Document {
 
 const doc = new Document();
 
-console.log("=== Building document ===");
+console.log('=== Building document ===');
 
 // Body text: Arial 12px black
-const bodyText = "Hello, World!";
+const bodyText = 'Hello, World!';
 for (let i = 0; i < bodyText.length; i++) {
-  doc.addCharacter(0, i, bodyText[i], "Arial", 12, "black");
+  doc.addCharacter(0, i, bodyText[i], 'Arial', 12, 'black');
 }
 
 // Heading: Arial 16px black
-const heading = "Title";
+const heading = 'Title';
 for (let i = 0; i < heading.length; i++) {
-  doc.addCharacter(1, i, heading[i], "Arial", 16, "black");
+  doc.addCharacter(1, i, heading[i], 'Arial', 16, 'black');
 }
 
 // Link text: Arial 12px blue
-const linkText = "Click here";
+const linkText = 'Click here';
 for (let i = 0; i < linkText.length; i++) {
-  doc.addCharacter(2, i, linkText[i], "Arial", 12, "blue");
+  doc.addCharacter(2, i, linkText[i], 'Arial', 12, 'blue');
 }
 
-console.log("\n=== Rendering document ===");
+console.log('\n=== Rendering document ===');
 doc.render();
 
 const { charCount, styleCount } = doc.stats;
@@ -115,4 +128,6 @@ console.log(`\n=== Memory savings ===`);
 console.log(`  Characters rendered: ${charCount}`);
 console.log(`  CharacterStyle objects in memory: ${styleCount}`);
 console.log(`  Without flyweight: ${charCount} full style objects`);
-console.log(`  With flyweight: ${styleCount} shared styles + ${charCount} lightweight wrappers`);
+console.log(
+  `  With flyweight: ${styleCount} shared styles + ${charCount} lightweight wrappers`,
+);

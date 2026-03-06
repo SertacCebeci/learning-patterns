@@ -16,13 +16,9 @@ class ServerConfig {
 
   // Deep copy — especially important for the packages array
   clone(): ServerConfig {
-    return new ServerConfig(
-      this.name,
-      this.cpu,
-      this.memoryGB,
-      this.diskGB,
-      [...this.packages],
-    );
+    return new ServerConfig(this.name, this.cpu, this.memoryGB, this.diskGB, [
+      ...this.packages,
+    ]);
   }
 
   addPackage(pkg: string): void {
@@ -38,7 +34,7 @@ class ServerConfig {
 
   display(): void {
     console.log(
-      `  ${this.name} | CPU: ${this.cpu} cores | RAM: ${this.memoryGB} GB | Disk: ${this.diskGB} GB | Packages: [${this.packages.join(", ")}]`,
+      `  ${this.name} | CPU: ${this.cpu} cores | RAM: ${this.memoryGB} GB | Disk: ${this.diskGB} GB | Packages: [${this.packages.join(', ')}]`,
     );
   }
 }
@@ -66,7 +62,7 @@ class ServerRegistry {
   }
 
   listTemplates(): void {
-    console.log("Available templates:");
+    console.log('Available templates:');
     for (const [key, config] of this.templates) {
       process.stdout.write(`  [${key}] `);
       config.display();
@@ -79,43 +75,49 @@ class ServerRegistry {
 const registry = new ServerRegistry();
 
 // Register base templates with sensible defaults
-registry.register("web-server", new ServerConfig("Web Server", 2, 4, 50, ["nginx"]));
-registry.register("database-server", new ServerConfig("Database Server", 4, 16, 200, ["postgresql", "pgbouncer"]));
+registry.register(
+  'web-server',
+  new ServerConfig('Web Server', 2, 4, 50, ['nginx']),
+);
+registry.register(
+  'database-server',
+  new ServerConfig('Database Server', 4, 16, 200, ['postgresql', 'pgbouncer']),
+);
 
-console.log("");
+console.log('');
 registry.listTemplates();
 
 // Spawn a web server and customize it into an API gateway
-console.log("\n=== Customizing a web server into an API gateway ===");
-const apiGw = registry.spawn("web-server");
-apiGw.name = "API Gateway";
-apiGw.addPackage("node");
-apiGw.addPackage("redis");
+console.log('\n=== Customizing a web server into an API gateway ===');
+const apiGw = registry.spawn('web-server');
+apiGw.name = 'API Gateway';
+apiGw.addPackage('node');
+apiGw.addPackage('redis');
 apiGw.upgradeSpecs(2, 4, 50);
 apiGw.display();
 
 // Save the customized config as a new template
-console.log("\n=== Registering API gateway as a new template ===");
-registry.register("api-gateway", apiGw);
+console.log('\n=== Registering API gateway as a new template ===');
+registry.register('api-gateway', apiGw);
 
-console.log("");
+console.log('');
 registry.listTemplates();
 
 // Spawn multiple api-gateway instances and customize individually
-console.log("\n=== Spawning API gateway instances ===");
-const gw1 = registry.spawn("api-gateway");
-gw1.name = "API Gateway #1";
-gw1.addPackage("monitoring-agent");
+console.log('\n=== Spawning API gateway instances ===');
+const gw1 = registry.spawn('api-gateway');
+gw1.name = 'API Gateway #1';
+gw1.addPackage('monitoring-agent');
 
-const gw2 = registry.spawn("api-gateway");
-gw2.name = "API Gateway #2";
-gw2.addPackage("rate-limiter");
+const gw2 = registry.spawn('api-gateway');
+gw2.name = 'API Gateway #2';
+gw2.addPackage('rate-limiter');
 gw2.upgradeSpecs(2, 8, 0);
 
 gw1.display();
 gw2.display();
 
 // Prove the registry template is unchanged
-console.log("\n=== Registry template unchanged? ===");
-registry.spawn("api-gateway").display();
+console.log('\n=== Registry template unchanged? ===');
+registry.spawn('api-gateway').display();
 // Still shows 3 packages: nginx, node, redis — not 4 or 5

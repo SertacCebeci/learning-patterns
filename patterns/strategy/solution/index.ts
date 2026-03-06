@@ -16,12 +16,14 @@ interface CompressionStrategy {
 // --- Concrete strategies ---
 
 class RunLengthEncoding implements CompressionStrategy {
-  name(): string { return "RunLengthEncoding"; }
+  name(): string {
+    return 'RunLengthEncoding';
+  }
 
   compress(input: string): string {
-    if (input.length === 0) return "";
+    if (input.length === 0) return '';
 
-    let result = "";
+    let result = '';
     let count = 1;
 
     for (let i = 1; i <= input.length; i++) {
@@ -37,13 +39,17 @@ class RunLengthEncoding implements CompressionStrategy {
   }
 
   decompress(compressed: string): string {
-    let result = "";
+    let result = '';
     let i = 0;
 
     while (i < compressed.length) {
       // Parse the count (may be multiple digits)
-      let numStr = "";
-      while (i < compressed.length && compressed[i] >= "0" && compressed[i] <= "9") {
+      let numStr = '';
+      while (
+        i < compressed.length &&
+        compressed[i] >= '0' &&
+        compressed[i] <= '9'
+      ) {
         numStr += compressed[i];
         i++;
       }
@@ -60,21 +66,21 @@ class RunLengthEncoding implements CompressionStrategy {
 class DictionaryCompression implements CompressionStrategy {
   // Common English words mapped to short tokens
   private dictionary: Map<string, string> = new Map([
-    ["the", "$1"],
-    ["quick", "$2"],
-    ["brown", "$3"],
-    ["fox", "$4"],
-    ["jumps", "$5"],
-    ["over", "$6"],
-    ["lazy", "$7"],
-    ["dog", "$8"],
-    ["and", "$9"],
-    ["is", "$10"],
-    ["a", "$11"],
-    ["that", "$12"],
-    ["it", "$13"],
-    ["for", "$14"],
-    ["was", "$15"],
+    ['the', '$1'],
+    ['quick', '$2'],
+    ['brown', '$3'],
+    ['fox', '$4'],
+    ['jumps', '$5'],
+    ['over', '$6'],
+    ['lazy', '$7'],
+    ['dog', '$8'],
+    ['and', '$9'],
+    ['is', '$10'],
+    ['a', '$11'],
+    ['that', '$12'],
+    ['it', '$13'],
+    ['for', '$14'],
+    ['was', '$15'],
   ]);
 
   // Reverse dictionary for decompression
@@ -87,7 +93,9 @@ class DictionaryCompression implements CompressionStrategy {
     }
   }
 
-  name(): string { return "DictionaryCompression"; }
+  name(): string {
+    return 'DictionaryCompression';
+  }
 
   compress(input: string): string {
     let result = input;
@@ -111,7 +119,9 @@ class DictionaryCompression implements CompressionStrategy {
 }
 
 class NoCompression implements CompressionStrategy {
-  name(): string { return "NoCompression"; }
+  name(): string {
+    return 'NoCompression';
+  }
 
   compress(input: string): string {
     return input;
@@ -126,7 +136,8 @@ class NoCompression implements CompressionStrategy {
 
 class StorageService {
   private strategy: CompressionStrategy;
-  private store_: Map<string, { compressed: string; originalSize: number }> = new Map();
+  private store_: Map<string, { compressed: string; originalSize: number }> =
+    new Map();
 
   constructor(strategy: CompressionStrategy) {
     this.strategy = strategy;
@@ -141,11 +152,14 @@ class StorageService {
     const compressed = this.strategy.compress(data);
     this.store_.set(key, { compressed, originalSize: data.length });
 
-    const ratio = data.length > 0
-      ? Math.round((1 - compressed.length / data.length) * 100)
-      : 0;
+    const ratio =
+      data.length > 0
+        ? Math.round((1 - compressed.length / data.length) * 100)
+        : 0;
 
-    console.log(`  Stored "${key}" (original: ${data.length} chars, compressed: ${compressed.length} chars, ratio: ${ratio}%)`);
+    console.log(
+      `  Stored "${key}" (original: ${data.length} chars, compressed: ${compressed.length} chars, ratio: ${ratio}%)`,
+    );
   }
 
   retrieve(key: string): string {
@@ -163,11 +177,14 @@ class StorageService {
       return;
     }
 
-    const ratio = entry.originalSize > 0
-      ? Math.round((1 - entry.compressed.length / entry.originalSize) * 100)
-      : 0;
+    const ratio =
+      entry.originalSize > 0
+        ? Math.round((1 - entry.compressed.length / entry.originalSize) * 100)
+        : 0;
 
-    console.log(`  "${key}" — original: ${entry.originalSize} chars, compressed: ${entry.compressed.length} chars, ratio: ${ratio}%`);
+    console.log(
+      `  "${key}" — original: ${entry.originalSize} chars, compressed: ${entry.compressed.length} chars, ratio: ${ratio}%`,
+    );
   }
 }
 
@@ -176,27 +193,33 @@ class StorageService {
 
 const storage = new StorageService(new RunLengthEncoding());
 
-console.log("=== RunLengthEncoding ===");
-const binaryData = "aaaaabbbbccccccccdddd";
-storage.store("binary", binaryData);
-const retrieved1 = storage.retrieve("binary");
-console.log(`  Retrieved: "${retrieved1}" ${retrieved1 === binaryData ? "\u2713" : "\u2717"}`);
+console.log('=== RunLengthEncoding ===');
+const binaryData = 'aaaaabbbbccccccccdddd';
+storage.store('binary', binaryData);
+const retrieved1 = storage.retrieve('binary');
+console.log(
+  `  Retrieved: "${retrieved1}" ${retrieved1 === binaryData ? '\u2713' : '\u2717'}`,
+);
 
-console.log("\n=== DictionaryCompression ===");
+console.log('\n=== DictionaryCompression ===');
 storage.setCompression(new DictionaryCompression());
-const essay = "the quick brown fox jumps over the lazy dog";
-storage.store("essay", essay);
-const retrieved2 = storage.retrieve("essay");
-console.log(`  Retrieved: "${retrieved2}" ${retrieved2 === essay ? "\u2713" : "\u2717"}`);
+const essay = 'the quick brown fox jumps over the lazy dog';
+storage.store('essay', essay);
+const retrieved2 = storage.retrieve('essay');
+console.log(
+  `  Retrieved: "${retrieved2}" ${retrieved2 === essay ? '\u2713' : '\u2717'}`,
+);
 
-console.log("\n=== NoCompression ===");
+console.log('\n=== NoCompression ===');
 storage.setCompression(new NoCompression());
-const config = "debug=true;level=5";
-storage.store("config", config);
-const retrieved3 = storage.retrieve("config");
-console.log(`  Retrieved: "${retrieved3}" ${retrieved3 === config ? "\u2713" : "\u2717"}`);
+const config = 'debug=true;level=5';
+storage.store('config', config);
+const retrieved3 = storage.retrieve('config');
+console.log(
+  `  Retrieved: "${retrieved3}" ${retrieved3 === config ? '\u2713' : '\u2717'}`,
+);
 
-console.log("\n=== Stats ===");
-storage.getStats("binary");
-storage.getStats("essay");
-storage.getStats("config");
+console.log('\n=== Stats ===');
+storage.getStats('binary');
+storage.getStats('essay');
+storage.getStats('config');

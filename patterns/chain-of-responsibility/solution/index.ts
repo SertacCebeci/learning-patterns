@@ -7,9 +7,9 @@
 interface SupportTicket {
   id: number;
   category: string;
-  priority: "low" | "medium" | "high" | "critical";
+  priority: 'low' | 'medium' | 'high' | 'critical';
   message: string;
-  customerTier: "basic" | "premium" | "enterprise";
+  customerTier: 'basic' | 'premium' | 'enterprise';
 }
 
 // --- Handler base class ---
@@ -36,8 +36,10 @@ abstract class SupportHandler {
 
 class FAQBot extends SupportHandler {
   handle(ticket: SupportTicket): string {
-    if (ticket.category === "general" && ticket.priority === "low") {
-      console.log(`  [FAQ Bot] Handled ticket #${ticket.id} -- sent automated FAQ link`);
+    if (ticket.category === 'general' && ticket.priority === 'low') {
+      console.log(
+        `  [FAQ Bot] Handled ticket #${ticket.id} -- sent automated FAQ link`,
+      );
       return `Here is an FAQ link that addresses your question: https://support.example.com/faq`;
     }
 
@@ -48,8 +50,10 @@ class FAQBot extends SupportHandler {
 
 class JuniorAgent extends SupportHandler {
   handle(ticket: SupportTicket): string {
-    if (ticket.priority === "medium") {
-      console.log(`  [Junior Agent] Handled ticket #${ticket.id} -- sent template reply`);
+    if (ticket.priority === 'medium') {
+      console.log(
+        `  [Junior Agent] Handled ticket #${ticket.id} -- sent template reply`,
+      );
       return `Thank you for contacting support. We've received your ${ticket.category} inquiry and a team member will follow up shortly.`;
     }
 
@@ -60,8 +64,10 @@ class JuniorAgent extends SupportHandler {
 
 class SeniorAgent extends SupportHandler {
   handle(ticket: SupportTicket): string {
-    if (ticket.priority === "high" || ticket.customerTier === "premium") {
-      console.log(`  [Senior Agent] Handled ticket #${ticket.id} -- provided personalized response`);
+    if (ticket.priority === 'high' || ticket.customerTier === 'premium') {
+      console.log(
+        `  [Senior Agent] Handled ticket #${ticket.id} -- provided personalized response`,
+      );
       return `A senior agent has reviewed your ${ticket.category} issue and is working on a personalized resolution.`;
     }
 
@@ -72,8 +78,13 @@ class SeniorAgent extends SupportHandler {
 
 class Manager extends SupportHandler {
   handle(ticket: SupportTicket): string {
-    if (ticket.priority === "critical" || ticket.customerTier === "enterprise") {
-      console.log(`  [Manager] Handled ticket #${ticket.id} -- escalated with dedicated rep`);
+    if (
+      ticket.priority === 'critical' ||
+      ticket.customerTier === 'enterprise'
+    ) {
+      console.log(
+        `  [Manager] Handled ticket #${ticket.id} -- escalated with dedicated rep`,
+      );
       return `Your ticket has been escalated to management. A dedicated representative has been assigned to your case.`;
     }
 
@@ -95,7 +106,9 @@ faqBot.setNext(juniorAgent).setNext(seniorAgent).setNext(manager);
 // --- Usage ---
 
 function submitTicket(ticket: SupportTicket): void {
-  console.log(`\n>>> Ticket #${ticket.id} (${ticket.category}, ${ticket.priority}, ${ticket.customerTier})`);
+  console.log(
+    `\n>>> Ticket #${ticket.id} (${ticket.category}, ${ticket.priority}, ${ticket.customerTier})`,
+  );
   console.log(`    "${ticket.message}"`);
   const response = faqBot.handle(ticket);
   console.log(`<<< ${response}`);
@@ -104,44 +117,44 @@ function submitTicket(ticket: SupportTicket): void {
 // 1. General low-priority ticket -- handled by FAQ Bot
 submitTicket({
   id: 1,
-  category: "general",
-  priority: "low",
-  message: "How do I reset my password?",
-  customerTier: "basic",
+  category: 'general',
+  priority: 'low',
+  message: 'How do I reset my password?',
+  customerTier: 'basic',
 });
 
 // 2. Billing medium-priority ticket -- passed by FAQ Bot, handled by Junior Agent
 submitTicket({
   id: 2,
-  category: "billing",
-  priority: "medium",
-  message: "I was double-charged for my last order.",
-  customerTier: "basic",
+  category: 'billing',
+  priority: 'medium',
+  message: 'I was double-charged for my last order.',
+  customerTier: 'basic',
 });
 
 // 3. Technical high-priority from premium customer -- handled by Senior Agent
 submitTicket({
   id: 3,
-  category: "technical",
-  priority: "high",
-  message: "My API integration is returning 500 errors.",
-  customerTier: "premium",
+  category: 'technical',
+  priority: 'high',
+  message: 'My API integration is returning 500 errors.',
+  customerTier: 'premium',
 });
 
 // 4. Critical outage from enterprise customer -- handled by Manager
 submitTicket({
   id: 4,
-  category: "outage",
-  priority: "critical",
-  message: "Our entire production environment is down!",
-  customerTier: "enterprise",
+  category: 'outage',
+  priority: 'critical',
+  message: 'Our entire production environment is down!',
+  customerTier: 'enterprise',
 });
 
 // 5. Legal low-priority from basic customer -- no handler matches, logged for manual review
 submitTicket({
   id: 5,
-  category: "legal",
-  priority: "low",
-  message: "I need a copy of your data processing agreement.",
-  customerTier: "basic",
+  category: 'legal',
+  priority: 'low',
+  message: 'I need a copy of your data processing agreement.',
+  customerTier: 'basic',
 });

@@ -36,7 +36,9 @@ class Book implements Product {
     return calculator.visitBook(this);
   }
 
-  getDisplayName(): string { return this.title; }
+  getDisplayName(): string {
+    return this.title;
+  }
 }
 
 class Electronics implements Product {
@@ -44,14 +46,16 @@ class Electronics implements Product {
     public name: string,
     public price: number,
     public weight: number,
-    public category: "phone" | "laptop" | "accessory",
+    public category: 'phone' | 'laptop' | 'accessory',
   ) {}
 
   accept(calculator: ProductCalculator): number {
     return calculator.visitElectronics(this);
   }
 
-  getDisplayName(): string { return this.name; }
+  getDisplayName(): string {
+    return this.name;
+  }
 }
 
 class Food implements Product {
@@ -67,7 +71,9 @@ class Food implements Product {
     return calculator.visitFood(this);
   }
 
-  getDisplayName(): string { return this.name; }
+  getDisplayName(): string {
+    return this.name;
+  }
 }
 
 class Clothing implements Product {
@@ -82,7 +88,9 @@ class Clothing implements Product {
     return calculator.visitClothing(this);
   }
 
-  getDisplayName(): string { return this.name; }
+  getDisplayName(): string {
+    return this.name;
+  }
 }
 
 // --- Concrete visitors ---
@@ -98,7 +106,7 @@ class TaxCalculator implements ProductCalculator {
   visitElectronics(product: Electronics): number {
     // 15% base tax. Phones get an extra 3% surcharge.
     let rate = 0.15;
-    if (product.category === "phone") rate += 0.03;
+    if (product.category === 'phone') rate += 0.03;
     return product.price * rate;
   }
 
@@ -110,7 +118,7 @@ class TaxCalculator implements ProductCalculator {
 
   visitClothing(product: Clothing): number {
     // 10% base tax, luxury items get 20%
-    const rate = product.isLuxury ? 0.20 : 0.10;
+    const rate = product.isLuxury ? 0.2 : 0.1;
     return product.price * rate;
   }
 }
@@ -118,12 +126,12 @@ class TaxCalculator implements ProductCalculator {
 class DiscountCalculator implements ProductCalculator {
   visitBook(product: Book): number {
     // 10% discount for educational books
-    return product.isEducational ? product.price * 0.10 : 0;
+    return product.isEducational ? product.price * 0.1 : 0;
   }
 
   visitElectronics(product: Electronics): number {
     // 5% discount for accessories
-    return product.category === "accessory" ? product.price * 0.05 : 0;
+    return product.category === 'accessory' ? product.price * 0.05 : 0;
   }
 
   visitFood(product: Food): number {
@@ -140,22 +148,22 @@ class DiscountCalculator implements ProductCalculator {
 class ShippingEstimator implements ProductCalculator {
   visitBook(product: Book): number {
     // $0.50 per kg (media mail rate)
-    return product.weight * 0.50;
+    return product.weight * 0.5;
   }
 
   visitElectronics(product: Electronics): number {
     // $2.00 per kg + $5.00 fragile handling
-    return product.weight * 2.00 + 5.00;
+    return product.weight * 2.0 + 5.0;
   }
 
   visitFood(product: Food): number {
     // $3.00 per kg (refrigerated shipping)
-    return product.weight * 3.00;
+    return product.weight * 3.0;
   }
 
   visitClothing(product: Clothing): number {
     // $1.00 per kg
-    return product.weight * 1.00;
+    return product.weight * 1.0;
   }
 }
 
@@ -168,7 +176,10 @@ class ShoppingCart {
     this.items.push(product);
   }
 
-  calculate(calculator: ProductCalculator): { details: { name: string; amount: number }[]; total: number } {
+  calculate(calculator: ProductCalculator): {
+    details: { name: string; amount: number }[];
+    total: number;
+  } {
     const details: { name: string; amount: number }[] = [];
     let total = 0;
 
@@ -186,13 +197,13 @@ class ShoppingCart {
 // Build a cart once, run many different calculations via visitors.
 
 const cart = new ShoppingCart();
-cart.add(new Book("TypeScript Handbook", 30.00, 0.5, true));
-cart.add(new Electronics("iPhone 15", 995.00, 0.2, "phone"));
-cart.add(new Food("Organic Avocados", 10.00, 1.5, true, true));
-cart.add(new Clothing("Designer Jacket", 300.00, 1.2, true));
+cart.add(new Book('TypeScript Handbook', 30.0, 0.5, true));
+cart.add(new Electronics('iPhone 15', 995.0, 0.2, 'phone'));
+cart.add(new Food('Organic Avocados', 10.0, 1.5, true, true));
+cart.add(new Clothing('Designer Jacket', 300.0, 1.2, true));
 
 // Tax calculation
-console.log("=== Tax Calculation ===");
+console.log('=== Tax Calculation ===');
 const taxCalc = new TaxCalculator();
 const taxResult = cart.calculate(taxCalc);
 for (const item of taxResult.details) {
@@ -201,7 +212,7 @@ for (const item of taxResult.details) {
 console.log(`  Total tax: $${taxResult.total.toFixed(2)}`);
 
 // Discount calculation
-console.log("\n=== Discount Calculation ===");
+console.log('\n=== Discount Calculation ===');
 const discountCalc = new DiscountCalculator();
 const discountResult = cart.calculate(discountCalc);
 for (const item of discountResult.details) {
@@ -210,7 +221,7 @@ for (const item of discountResult.details) {
 console.log(`  Total savings: $${discountResult.total.toFixed(2)}`);
 
 // Shipping estimation
-console.log("\n=== Shipping Estimation ===");
+console.log('\n=== Shipping Estimation ===');
 const shippingCalc = new ShippingEstimator();
 const shippingResult = cart.calculate(shippingCalc);
 for (const item of shippingResult.details) {

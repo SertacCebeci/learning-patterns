@@ -8,7 +8,7 @@
 // --- Shape type ---
 
 interface Shape {
-  type: "circle" | "rectangle" | "line";
+  type: 'circle' | 'rectangle' | 'line';
   x: number;
   y: number;
   width: number;
@@ -31,8 +31,12 @@ class CanvasSnapshot {
   get shapes(): Shape[] {
     return this._shapes.map((s) => ({ ...s }));
   }
-  get backgroundColor(): string { return this._backgroundColor; }
-  get zoom(): number { return this._zoom; }
+  get backgroundColor(): string {
+    return this._backgroundColor;
+  }
+  get zoom(): number {
+    return this._zoom;
+  }
 
   // The caretaker can see metadata but NOT the actual canvas data
   getLabel(): string {
@@ -44,12 +48,14 @@ class CanvasSnapshot {
 
 class Canvas {
   private shapes: Shape[] = [];
-  private backgroundColor = "white";
+  private backgroundColor = 'white';
   private zoom = 1;
 
   addShape(shape: Shape): void {
     this.shapes.push({ ...shape });
-    console.log(`  Added ${shape.type} (${shape.color}) at (${shape.x}, ${shape.y})`);
+    console.log(
+      `  Added ${shape.type} (${shape.color}) at (${shape.x}, ${shape.y})`,
+    );
   }
 
   removeLastShape(): void {
@@ -57,7 +63,7 @@ class Canvas {
     if (removed) {
       console.log(`  Removed ${removed.type} (${removed.color})`);
     } else {
-      console.log("  No shapes to remove.");
+      console.log('  No shapes to remove.');
     }
   }
 
@@ -72,9 +78,13 @@ class Canvas {
   }
 
   display(): void {
-    console.log(`  Canvas: ${this.shapes.length} shapes, bg: ${this.backgroundColor}, zoom: ${this.zoom}x`);
+    console.log(
+      `  Canvas: ${this.shapes.length} shapes, bg: ${this.backgroundColor}, zoom: ${this.zoom}x`,
+    );
     for (const s of this.shapes) {
-      console.log(`    - ${s.type} (${s.color}) at (${s.x}, ${s.y}) [${s.width}x${s.height}]`);
+      console.log(
+        `    - ${s.type} (${s.color}) at (${s.x}, ${s.y}) [${s.width}x${s.height}]`,
+      );
     }
   }
 
@@ -107,7 +117,9 @@ class VersionHistory {
   save(canvas: Canvas): void {
     const snapshot = canvas.save();
     this.snapshots.push(snapshot);
-    console.log(`=== Snapshot ${this.snapshots.length} saved: "${snapshot.getLabel()}" ===`);
+    console.log(
+      `=== Snapshot ${this.snapshots.length} saved: "${snapshot.getLabel()}" ===`,
+    );
   }
 
   restore(canvas: Canvas, index: number): boolean {
@@ -116,7 +128,9 @@ class VersionHistory {
       return false;
     }
     const snapshot = this.snapshots[index];
-    console.log(`=== Restored to Snapshot ${index + 1}: ${snapshot.getLabel()} ===`);
+    console.log(
+      `=== Restored to Snapshot ${index + 1}: ${snapshot.getLabel()} ===`,
+    );
     canvas.restore(snapshot);
     return true;
   }
@@ -130,7 +144,7 @@ class VersionHistory {
 
   clear(): void {
     this.snapshots = [];
-    console.log("  Version history cleared.");
+    console.log('  Version history cleared.');
   }
 }
 
@@ -139,39 +153,74 @@ class VersionHistory {
 const canvas = new Canvas();
 const history = new VersionHistory();
 
-console.log("=== Adding 3 shapes ===");
-canvas.addShape({ type: "circle", x: 10, y: 20, width: 50, height: 50, color: "red" });
-canvas.addShape({ type: "rectangle", x: 30, y: 40, width: 100, height: 60, color: "blue" });
-canvas.addShape({ type: "line", x: 0, y: 0, width: 200, height: 1, color: "black" });
+console.log('=== Adding 3 shapes ===');
+canvas.addShape({
+  type: 'circle',
+  x: 10,
+  y: 20,
+  width: 50,
+  height: 50,
+  color: 'red',
+});
+canvas.addShape({
+  type: 'rectangle',
+  x: 30,
+  y: 40,
+  width: 100,
+  height: 60,
+  color: 'blue',
+});
+canvas.addShape({
+  type: 'line',
+  x: 0,
+  y: 0,
+  width: 200,
+  height: 1,
+  color: 'black',
+});
 
 console.log();
 history.save(canvas);
 
-console.log("\n=== Modifying canvas ===");
-canvas.setBackground("navy");
+console.log('\n=== Modifying canvas ===');
+canvas.setBackground('navy');
 canvas.setZoom(1.5);
-canvas.addShape({ type: "circle", x: 80, y: 90, width: 30, height: 30, color: "yellow" });
-canvas.addShape({ type: "rectangle", x: 120, y: 50, width: 40, height: 80, color: "green" });
+canvas.addShape({
+  type: 'circle',
+  x: 80,
+  y: 90,
+  width: 30,
+  height: 30,
+  color: 'yellow',
+});
+canvas.addShape({
+  type: 'rectangle',
+  x: 120,
+  y: 50,
+  width: 40,
+  height: 80,
+  color: 'green',
+});
 
 console.log();
 history.save(canvas);
 
-console.log("\n=== Messing things up ===");
+console.log('\n=== Messing things up ===');
 canvas.removeLastShape();
 canvas.removeLastShape();
 canvas.removeLastShape();
-canvas.setBackground("red");
+canvas.setBackground('red');
 canvas.setZoom(3);
 console.log();
 canvas.display();
 
-console.log("\n=== Listing all snapshots ===");
+console.log('\n=== Listing all snapshots ===');
 history.listSnapshots();
 
-console.log("\n=== Restoring to Snapshot 1 ===");
+console.log('\n=== Restoring to Snapshot 1 ===');
 history.restore(canvas, 0);
 canvas.display();
 
-console.log("\n=== Restoring to Snapshot 2 ===");
+console.log('\n=== Restoring to Snapshot 2 ===');
 history.restore(canvas, 1);
 canvas.display();

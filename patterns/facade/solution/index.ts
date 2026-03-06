@@ -9,11 +9,11 @@
 
 class Amplifier {
   on(): void {
-    console.log("  [Amplifier] Turning on");
+    console.log('  [Amplifier] Turning on');
   }
 
   off(): void {
-    console.log("  [Amplifier] Turning off");
+    console.log('  [Amplifier] Turning off');
   }
 
   setVolume(level: number): void {
@@ -27,25 +27,25 @@ class Amplifier {
 
 class Projector {
   on(): void {
-    console.log("  [Projector] Turning on");
+    console.log('  [Projector] Turning on');
   }
 
   off(): void {
-    console.log("  [Projector] Turning off");
+    console.log('  [Projector] Turning off');
   }
 
-  setResolution(res: "720p" | "1080p" | "4K"): void {
+  setResolution(res: '720p' | '1080p' | '4K'): void {
     console.log(`  [Projector] Setting resolution to ${res}`);
   }
 }
 
 class StreamingPlayer {
   on(): void {
-    console.log("  [StreamingPlayer] Turning on");
+    console.log('  [StreamingPlayer] Turning on');
   }
 
   off(): void {
-    console.log("  [StreamingPlayer] Turning off");
+    console.log('  [StreamingPlayer] Turning off');
   }
 
   play(movie: string): void {
@@ -53,7 +53,7 @@ class StreamingPlayer {
   }
 
   stop(): void {
-    console.log("  [StreamingPlayer] Stopping playback");
+    console.log('  [StreamingPlayer] Stopping playback');
   }
 }
 
@@ -63,17 +63,17 @@ class TheaterLights {
   }
 
   on(): void {
-    console.log("  [TheaterLights] Turning on (full brightness)");
+    console.log('  [TheaterLights] Turning on (full brightness)');
   }
 }
 
 class Subwoofer {
   on(): void {
-    console.log("  [Subwoofer] Turning on");
+    console.log('  [Subwoofer] Turning on');
   }
 
   off(): void {
-    console.log("  [Subwoofer] Turning off");
+    console.log('  [Subwoofer] Turning off');
   }
 
   setBass(level: number): void {
@@ -105,11 +105,11 @@ class HomeTheaterFacade {
 
     // 1. Turn on the projector and set resolution to 4K
     this.projector.on();
-    this.projector.setResolution("4K");
+    this.projector.setResolution('4K');
 
     // 2. Turn on the amplifier, set input to "streaming", and set volume to 7
     this.amplifier.on();
-    this.amplifier.setInput("streaming");
+    this.amplifier.setInput('streaming');
     this.amplifier.setVolume(7);
 
     // 3. Turn on the subwoofer and set bass to 8
@@ -127,7 +127,7 @@ class HomeTheaterFacade {
   }
 
   endMovie(): void {
-    console.log("Shutting down the home theater...");
+    console.log('Shutting down the home theater...');
 
     // 1. Stop the streaming player and turn it off
     this.player.stop();
@@ -145,7 +145,7 @@ class HomeTheaterFacade {
     // 5. Turn the lights back on (full brightness)
     this.lights.on();
 
-    console.log("Home theater shut down. Goodnight!");
+    console.log('Home theater shut down. Goodnight!');
   }
 }
 
@@ -155,8 +155,8 @@ class HomeTheaterFacade {
 
 const theater = new HomeTheaterFacade();
 
-console.log("=== Movie Night ===\n");
-theater.watchMovie("Inception");
+console.log('=== Movie Night ===\n');
+theater.watchMovie('Inception');
 
-console.log("\n=== Movie Over ===\n");
+console.log('\n=== Movie Over ===\n');
 theater.endMovie();

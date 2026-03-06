@@ -69,28 +69,28 @@ class ProxyImage implements Image {
 // The client works with the Image interface. It doesn't know whether
 // it has a RealImage or a ProxyImage.
 
-console.log("=== Creating gallery (no images loaded yet) ===");
+console.log('=== Creating gallery (no images loaded yet) ===');
 const images: Image[] = [
-  new ProxyImage("photo1.jpg"),
-  new ProxyImage("photo2.jpg"),
-  new ProxyImage("photo3.jpg"),
+  new ProxyImage('photo1.jpg'),
+  new ProxyImage('photo2.jpg'),
+  new ProxyImage('photo3.jpg'),
 ];
 
 // getFilename() works without triggering a load
-console.log("\n=== Checking filenames (no loading) ===");
+console.log('\n=== Checking filenames (no loading) ===');
 for (const img of images) {
   console.log(`  Filename: ${img.getFilename()}`);
 }
 
 // Only load images that the user actually clicks on
-console.log("\n=== User clicks photo1 ===");
+console.log('\n=== User clicks photo1 ===');
 console.log(`  Data: ${images[0].display()}`);
 
-console.log("\n=== User clicks photo1 again (cached) ===");
+console.log('\n=== User clicks photo1 again (cached) ===');
 console.log(`  Data: ${images[0].display()}`);
 
-console.log("\n=== User clicks photo3 ===");
+console.log('\n=== User clicks photo3 ===');
 console.log(`  Data: ${images[2].display()}`);
 
 // photo2.jpg is never loaded because display() was never called on it
-console.log("\n=== photo2 was never loaded — saving bandwidth ===");
+console.log('\n=== photo2 was never loaded — saving bandwidth ===');

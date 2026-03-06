@@ -102,7 +102,7 @@ class LightOnAction implements Action {
   }
 
   description(): string {
-    return "Turn on light";
+    return 'Turn on light';
   }
 }
 
@@ -123,7 +123,7 @@ class LightOffAction implements Action {
   }
 
   description(): string {
-    return "Turn off light";
+    return 'Turn off light';
   }
 }
 
@@ -216,7 +216,7 @@ class StopMusicAction implements Action {
   }
 
   description(): string {
-    return "Stop music";
+    return 'Stop music';
   }
 }
 
@@ -253,17 +253,20 @@ class RemoteControl {
   undoLastAction(): void {
     const action = this.history.pop();
     if (!action) {
-      console.log("  Nothing to undo.");
+      console.log('  Nothing to undo.');
       return;
     }
 
     console.log(`[Undo]`);
     action.undo();
-    this.log.push({ timestamp: new Date(), description: `Undo: ${action.description()}` });
+    this.log.push({
+      timestamp: new Date(),
+      description: `Undo: ${action.description()}`,
+    });
   }
 
   printLog(): void {
-    console.log("\n=== Action Log ===");
+    console.log('\n=== Action Log ===');
     for (const entry of this.log) {
       const time = entry.timestamp.toLocaleTimeString();
       console.log(`  [${time}] ${entry.description}`);
@@ -275,27 +278,27 @@ class RemoteControl {
 // The RemoteControl has no knowledge of specific device types.
 // Adding a new device only requires creating new Action classes.
 
-const livingRoomLight = new Light("Living room");
+const livingRoomLight = new Light('Living room');
 const thermostat = new Thermostat();
 const musicPlayer = new MusicPlayer();
 
 const remote = new RemoteControl();
 
-console.log("=== Setting up remote ===");
+console.log('=== Setting up remote ===');
 remote.assignButton(1, new LightOnAction(livingRoomLight));
 remote.assignButton(2, new SetTemperatureAction(thermostat, 72));
-remote.assignButton(3, new PlayMusicAction(musicPlayer, "Jazz playlist"));
+remote.assignButton(3, new PlayMusicAction(musicPlayer, 'Jazz playlist'));
 
-console.log("\n=== Pressing buttons 1, 2, 3 ===");
+console.log('\n=== Pressing buttons 1, 2, 3 ===');
 remote.pressButton(1);
 remote.pressButton(2);
 remote.pressButton(3);
 
-console.log("\n=== Undoing last two actions ===");
+console.log('\n=== Undoing last two actions ===');
 remote.undoLastAction();
 remote.undoLastAction();
 
-console.log("\n=== Pressing button 1 again ===");
+console.log('\n=== Pressing button 1 again ===');
 remote.pressButton(1);
 
 remote.printLog();

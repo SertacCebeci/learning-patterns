@@ -9,7 +9,7 @@ class Computer {
   parts: string[] = [];
 
   display(): void {
-    console.log("Computer: " + this.parts.join(", "));
+    console.log('Computer: ' + this.parts.join(', '));
   }
 }
 
@@ -30,19 +30,19 @@ class GamingPCBuilder implements ComputerBuilder {
   private computer = new Computer();
 
   addCPU(): void {
-    this.computer.parts.push("Intel i9");
+    this.computer.parts.push('Intel i9');
   }
   addRAM(): void {
-    this.computer.parts.push("32GB DDR5");
+    this.computer.parts.push('32GB DDR5');
   }
   addStorage(): void {
-    this.computer.parts.push("2TB NVMe SSD");
+    this.computer.parts.push('2TB NVMe SSD');
   }
   addGPU(): void {
-    this.computer.parts.push("RTX 4090");
+    this.computer.parts.push('RTX 4090');
   }
   addCooling(): void {
-    this.computer.parts.push("Liquid Cooling");
+    this.computer.parts.push('Liquid Cooling');
   }
   getResult(): Computer {
     const result = this.computer;
@@ -55,19 +55,19 @@ class OfficePCBuilder implements ComputerBuilder {
   private computer = new Computer();
 
   addCPU(): void {
-    this.computer.parts.push("Intel i5");
+    this.computer.parts.push('Intel i5');
   }
   addRAM(): void {
-    this.computer.parts.push("16GB DDR4");
+    this.computer.parts.push('16GB DDR4');
   }
   addStorage(): void {
-    this.computer.parts.push("512GB SSD");
+    this.computer.parts.push('512GB SSD');
   }
   addGPU(): void {
-    this.computer.parts.push("Integrated Graphics");
+    this.computer.parts.push('Integrated Graphics');
   }
   addCooling(): void {
-    this.computer.parts.push("Stock Fan");
+    this.computer.parts.push('Stock Fan');
   }
   getResult(): Computer {
     const result = this.computer;
@@ -127,19 +127,19 @@ const gamingBuilder = new GamingPCBuilder();
 const officeBuilder = new OfficePCBuilder();
 const director = new ComputerDirector(gamingBuilder);
 
-console.log("=== Gaming Full PC ===");
+console.log('=== Gaming Full PC ===');
 director.buildFullPC().display();
 
-console.log("\n=== Gaming Basic PC ===");
+console.log('\n=== Gaming Basic PC ===');
 director.buildBasicPC().display();
 
-console.log("\n=== Office Basic PC ===");
+console.log('\n=== Office Basic PC ===');
 director.setBuilder(officeBuilder);
 director.buildBasicPC().display();
 
-console.log("\n=== Office Workstation ===");
+console.log('\n=== Office Workstation ===');
 director.buildWorkstation().display();
 
-console.log("\n=== Gaming Workstation ===");
+console.log('\n=== Gaming Workstation ===');
 director.setBuilder(gamingBuilder);
 director.buildWorkstation().display();
