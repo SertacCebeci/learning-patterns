@@ -4,7 +4,7 @@ The Abstract Factory pattern provides an interface for creating families of rela
 
 ## The Problem It Solves
 
-When a system must work with multiple families of related objects (e.g., UI components for different platforms), directly instantiating concrete classes scatters platform-specific decisions throughout the codebase. If you later need to add a new family or switch between families, you must hunt down and change every instantiation point. The Abstract Factory groups all related creation logic into a single factory, so the client code remains platform-agnostic and changes are localized.
+When a system must work with multiple families of related objects (e.g., furniture in Modern, Victorian, or ArtDeco styles), directly instantiating concrete classes scatters variant-specific decisions throughout the codebase. You need a way to create individual objects so that they match other objects of the same family. If you later need to add a new family or switch between families, you must hunt down and change every instantiation point. The Abstract Factory groups all related creation logic into a single factory, so the client code remains variant-agnostic and changes are localized.
 
 ## How It Works
 
@@ -15,7 +15,7 @@ When a system must work with multiple families of related objects (e.g., UI comp
 
 ## When to Use It
 
-- When your system must support multiple families of related objects (e.g., cross-platform UI toolkits, themed component sets, or environment-specific services).
+- When your code needs to work with multiple families of related products, but you don't want it to depend on concrete classes (they might be unknown beforehand or you want to allow for future extensibility).
 - When you want to guarantee that products from the same family are used together and never mixed.
-- When you want to add new families without modifying existing client code.
-- When object creation details should be decoupled from the code that uses the objects.
+- When you have a class with a set of Factory Methods that blur its primary responsibility.
+- When you want to add new product variants (families) without modifying existing client code.

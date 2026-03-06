@@ -1,6 +1,6 @@
 ## Description
 
-The Builder with Director pattern adds a Director class on top of the basic Builder pattern. The Director encapsulates predefined construction sequences (recipes) so the client does not need to call individual builder steps. The client simply chooses a builder (which determines the concrete parts) and a director recipe (which determines the combination of steps), and receives a fully assembled product.
+The Builder with Director pattern adds a Director class on top of the basic Builder pattern. The Director defines the order in which to execute the building steps and encapsulates predefined construction routines (recipes), so the client does not need to call individual builder steps. The client simply chooses a builder (which determines the concrete parts) and a director recipe (which determines the combination of steps), and receives a fully assembled product. The Director is optional — the client can call builder steps directly — but it's useful for reusing construction routines.
 
 ## The Problem It Solves
 

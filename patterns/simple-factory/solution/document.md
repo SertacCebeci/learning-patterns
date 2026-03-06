@@ -4,7 +4,7 @@ The Simple Factory pattern uses a single function or static method to encapsulat
 
 ## The Problem It Solves
 
-When client code directly instantiates concrete classes, it becomes tightly coupled to those implementations. Adding a new variant means updating every place that calls `new`. The Simple Factory centralizes object creation in one place, so the rest of the codebase depends only on the common interface. Changes to which class is instantiated -- or how -- are confined to the factory function.
+When client code directly instantiates concrete classes using `new`, it becomes tightly coupled to those implementations. Adding a new variant (e.g., adding ship transportation to a logistics app that only handled trucks) means updating every place that calls `new`. The Simple Factory centralizes object creation in one place, so the rest of the codebase depends only on the common interface. Unlike the full Factory Method pattern (which uses subclass inheritance to vary the created type), Simple Factory uses a single function with conditional logic — simpler but less extensible.
 
 ## How It Works
 

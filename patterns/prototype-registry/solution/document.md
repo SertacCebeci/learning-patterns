@@ -1,6 +1,6 @@
 ## Description
 
-The Prototype Registry (Advanced Prototype) pattern extends the basic Prototype pattern by adding a centralized registry that stores named prototypes. Instead of holding direct references to prototype objects, clients look up prototypes by name from the registry, clone them, and optionally register their customized versions as new prototypes. This creates a dynamic, extensible catalog of clonable objects.
+The Prototype Registry extends the basic Prototype pattern by adding a centralized registry that stores frequently-used pre-configured prototypes. Instead of holding direct references to prototype objects, clients look up prototypes by name from the registry, clone them, and optionally register their customized versions as new prototypes. This creates a dynamic, extensible catalog of clonable objects.
 
 ## The Problem It Solves
 

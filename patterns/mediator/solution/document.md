@@ -1,15 +1,21 @@
 ## Description
 
-Reduces chaotic dependencies between objects by forcing them to communicate only through a mediator. Components don't talk to each other directly.
+The Mediator is a behavioral design pattern that lets you reduce chaotic dependencies between objects. It restricts direct communications between objects and forces them to collaborate only via a mediator object.
 
 ## The Problem It Solves
 
-Multiple components interacting directly create a web of dependencies. Adding or changing one means touching all others.
+When UI elements or other components communicate directly with each other (e.g., a checkbox reveals a text field, a submit button validates all fields), they become tightly coupled. Changes to one element may affect all others. This makes components hard to reuse in other contexts because they drag along all their dependencies.
 
 ## How It Works
 
-Components notify the mediator of events. The mediator contains coordination logic and notifies relevant components.
+1. Define a mediator interface that declares communication methods (e.g., `notify(sender, event)`).
+2. Components store a reference to the mediator instead of references to each other.
+3. When something happens in a component (e.g., a button click), it notifies the mediator instead of calling other components directly.
+4. The mediator contains the coordination logic — it receives notifications and redirects calls to the appropriate components.
+5. Components become independent of each other and only depend on the mediator interface.
 
 ## When to Use It
 
-Components have too many direct dependencies. You can't reuse a component because it references too many others.
+- When classes are so tightly coupled to each other that it's hard to change one without affecting the others.
+- When you can't reuse a component in a different program because it depends on too many other components.
+- When you find yourself creating lots of component subclasses just to reuse some basic behavior in various contexts.

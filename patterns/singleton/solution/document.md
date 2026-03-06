@@ -4,7 +4,10 @@ The Singleton pattern ensures that a class has only one instance throughout the 
 
 ## The Problem It Solves
 
-In many applications, certain resources must exist as a single shared instance -- for example, a configuration manager, a connection pool, or a logging service. Without the Singleton pattern, multiple parts of the code could independently create their own instances, leading to duplicated state, wasted resources, or inconsistent behavior. The pattern guarantees that everyone works with the exact same object.
+The Singleton pattern solves two problems at once (which is why it's sometimes considered a violation of the Single Responsibility Principle):
+
+1. **Ensure a single instance**: Certain resources must exist as a single shared instance (e.g., a database connection, configuration store). Without Singleton, code can independently create multiple instances leading to inconsistent state.
+2. **Provide a global access point**: While similar to global variables, Singleton protects the instance from being overwritten by other code and centralizes access.
 
 ## How It Works
 
@@ -15,7 +18,7 @@ In many applications, certain resources must exist as a single shared instance -
 
 ## When to Use It
 
-- When exactly one instance of a class is needed to coordinate actions across the system (e.g., a logger, configuration store, or cache).
+- When exactly one instance of a class is needed to coordinate actions across the system (e.g., a shared database connection).
+- When you need stricter control over global variables.
 - When you need to control concurrent access to a shared resource.
-- When creating the object is expensive and you want to avoid redundant initialization.
-- When global state must be accessed consistently from many parts of the application.
+- Note: Singleton requires special handling in multithreaded environments and can complicate unit testing.

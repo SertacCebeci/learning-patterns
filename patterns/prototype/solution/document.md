@@ -4,7 +4,7 @@ The Prototype pattern creates new objects by copying (cloning) an existing insta
 
 ## The Problem It Solves
 
-Sometimes creating an object is expensive -- it may involve reading from a database, parsing configuration, or performing heavy computation. Repeating this setup every time a new instance is needed is wasteful. Additionally, client code may not know the exact class of the object it needs to duplicate. The Prototype pattern solves both problems by letting you copy a pre-configured instance and tweak it, rather than building from zero.
+When you want to create an exact copy of an object, you can't always do it from the outside — some fields may be private and not visible. Even if all fields are accessible, copying requires knowing the object's concrete class, which couples your code to that class. When working with objects through interfaces, you may not even know the concrete class at all. The Prototype pattern delegates cloning to the objects themselves, solving both the encapsulation and coupling problems.
 
 ## How It Works
 
@@ -15,7 +15,7 @@ Sometimes creating an object is expensive -- it may involve reading from a datab
 
 ## When to Use It
 
+- When your code shouldn't depend on the concrete classes of objects that you need to copy.
+- When you want to reduce the number of subclasses that only differ in the way they initialize their objects.
 - When object creation is expensive and you want to avoid repeating the initialization cost.
-- When you need many similar objects with small variations and want to start from a common base.
-- When client code should not depend on the concrete class of the objects it duplicates.
-- When you want to avoid subclassing just to create slightly different configurations of the same object.
+- When you need many similar objects with small variations and want to start from a pre-configured base.
