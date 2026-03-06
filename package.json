@@ -2,10 +2,13 @@
   "name": "learning-patterns",
   "version": "1.0.0",
   "scripts": {
-    "run": "ts-node"
+    "run": "ts-node",
+    "format": "prettier --write \"patterns/**/*.ts\"",
+    "format:check": "prettier --check \"patterns/**/*.ts\""
   },
   "devDependencies": {
     "@types/node": "^25.3.3",
+    "prettier": "^3.8.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
