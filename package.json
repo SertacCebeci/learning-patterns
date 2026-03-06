@@ -1,0 +1,12 @@
+{
+  "name": "learning-patterns",
+  "version": "1.0.0",
+  "scripts": {
+    "run": "ts-node"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

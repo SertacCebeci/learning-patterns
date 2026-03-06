@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init)",
+      "Bash(npm init -y)",
+      "Bash(npx ts-node patterns/simple-factory/index.ts)",
+      "Bash(npx ts-node patterns/abstract-factory/index.ts)",
+      "Bash(npx ts-node patterns/builder/index.ts)",
+      "WebFetch(domain:refactoring.guru)",
+      "Bash(npx ts-node patterns/builder-director/index.ts)",
+      "Bash(npx ts-node patterns/prototype/index.ts)",
+      "Bash(npx ts-node patterns/prototype-advanced/index.ts)",
+      "Bash(npx ts-node patterns/adapter/index.ts)",
+      "Bash(npx ts-node patterns/composite/index.ts)",
+      "Bash(npx ts-node patterns/proxy/index.ts)",
+      "Bash(npx ts-node patterns/chain-of-responsibility/index.ts)",
+      "Bash(npx ts-node patterns/iterator/index.ts)",
+      "Bash(npx ts-node patterns/state/index.ts)",
+      "Bash(npx ts-node patterns/visitor/index.ts)"
+    ]
+  }
+}
