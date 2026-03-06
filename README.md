@@ -64,6 +64,16 @@ pattern-name/
 | [Template Method](patterns/template-method/) | Defines algorithm skeleton, deferring steps to subclasses |
 | [Visitor](patterns/visitor/) | Adds operations to objects without modifying them |
 
+## Evaluate Your Answers
+
+This repo includes a Claude Code skill to evaluate your implementations. After writing your answer, run:
+
+```
+/evaluate-answers <pattern-name>
+```
+
+It will compare your `answer/index.ts` and `answer/document.md` against the reference solution, run your code, and provide structured feedback on correctness, documentation completeness, and pattern understanding.
+
 ## Getting Started
 
 ```bash
